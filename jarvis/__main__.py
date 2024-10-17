@@ -1,7 +1,7 @@
-from .controller import Controller
+from .main_controller import MainController
 
 def main():
-    controller = Controller()
+    controller = MainController()
 
     while True:
         user_input = input("What should I do: ")

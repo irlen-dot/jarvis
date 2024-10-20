@@ -100,7 +100,8 @@ crashlytics-build.properties
         f.write(gitignore_content.strip())
     print("Created .gitignore file for Unity project")
 
-def create_and_push_repo(path):
+def create_and_push_repo(path, repo_name: str):
+    print('Repository creation has started...')
     if not os.path.isdir(path):
         print(f"Error: The directory {path} does not exist or is not accessible.")
         return
@@ -119,18 +120,19 @@ def create_and_push_repo(path):
         with open("README.md", "w") as f:
             f.write("# Unity Project\n\nThis repository contains a Unity project created automatically.")
 
-        if not run_command(["git", "add", "README.md", ".gitignore"]):
+    
+        if not run_command(["git", "add", "."]):
             return
 
-        if not run_command(["git", "commit", "-m", "Initial commit with README and .gitignore"]):
+        if not run_command(["git", "commit", "-m", "Initial commit"]):
             return
 
-        if not run_command(["hub", "create"]):
+        if not run_command(["gh", "repo", "create", repo_name, "--private", "--source=.", "--push"]):
             print("Error: Failed to create GitHub repository. Make sure Hub is installed and configured.")
             return
 
-        if not run_command(["git", "push", "-u", "origin", "main"]):
-            return
+        # if not run_command(["git", "push", "-u", "origin", "main"]):
+        #     return
 
         print("Repository successfully created and pushed to GitHub!")
         print("--- Finished repository creation process ---")

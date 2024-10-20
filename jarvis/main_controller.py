@@ -7,6 +7,7 @@ from langchain_core.runnables import RunnableLambda
 from langchain.schema.output_parser import StrOutputParser
 from .project_template.controller import ProjectTemplateController
 
+
 class MainController(BaseController):
     def __init__(self):
         super().__init__(InternalModelSelector, """
@@ -25,6 +26,8 @@ class MainController(BaseController):
         The input is: {input}
         """)
         self.project_temp_controller = ProjectTemplateController()
+
+
 
     def manage_input(self, input): 
         prompt = PromptTemplate.from_template(self.prompt_text)

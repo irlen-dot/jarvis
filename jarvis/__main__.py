@@ -2,7 +2,6 @@ from .main_controller import MainController
 
 def main():
     controller = MainController()
-
     while True:
         user_input = input("What should I do: ")
         if user_input.lower() == "exit":

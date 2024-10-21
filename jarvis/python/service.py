@@ -20,6 +20,8 @@ class PythonService():
         os.chdir(project_path)
         
         # Create and activate virtual environment
+        subprocess.run(["poetry", "env", "use", "python"], check=True)
+
         subprocess.run(["poetry", "shell"], check=True)
         
         # Get interpreter path
@@ -33,7 +35,7 @@ class PythonService():
             print("Failed to get project interpreter path. VS Code interpreter not set.")
         
         # Open VS Code
-        subprocess.Popen(["code", project_path])
+        run_command(["code", project_path])
         
         # Change back to original directory
         os.chdir(current_path)

@@ -28,12 +28,12 @@ def run_command(command):
     if isinstance(command, list):
         command = ' '.join(command)
 
-    current_dir = getattr(_thread_local, 'current_dir', os.getcwd())
-    full_command = f'cd /d "{current_dir}" && {command}' if os.name == 'nt' else f'cd "{current_dir}"; {command}'
+    # current_dir = getattr(_thread_local, 'current_dir', os.getcwd())
+    # full_command = f'cd /d "{current_dir}" && {command}' if os.name == 'nt' else f'cd "{current_dir}"; {command}'
     
     try:
-        result = subprocess.run(full_command, check=True, capture_output=True, text=True, shell=True)
-        print(f"Command '{command}' executed successfully in {current_dir}.")
+        result = subprocess.run(command, check=True, capture_output=True, text=True, shell=True)
+        print(f"Command '{command}' executed successfully in {command}.")
         
         output = result.stdout
         if result.stderr:
@@ -43,7 +43,7 @@ def run_command(command):
         
         return True, output
     except subprocess.CalledProcessError as e:
-        print(f"Error executing command '{command}' in {current_dir}:")
+        print(f"Error executing command '{command}' in {command}:")
         print("Error:", e)
         
         error_output = e.stdout

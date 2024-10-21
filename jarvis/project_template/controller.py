@@ -40,5 +40,6 @@ Input: {input}
         chain.invoke({ 'input': input })
 
     def _manage_output(self, output: Project_Type_Name):
+        print(output)
         if 'unity' in output.project_type:
             self.unity_service.create_project(output.project_name)

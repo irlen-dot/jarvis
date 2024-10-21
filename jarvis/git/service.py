@@ -108,7 +108,7 @@ def create_and_push_repo(path, repo_name: str):
         if not run_command(["git", "add", "."]):
             return
 
-        if not run_command(["git", "commit", "-m", "Initial commit"]):
+        if not run_command(["git", "commit", "-m", '"Initial commit"']):
             return
 
         if not run_command(["gh", "repo", "create", repo_name, "--private", "--source=.", "--push"]):

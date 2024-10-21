@@ -1,24 +1,8 @@
 import os
-from contextlib import contextmanager
 
-from jarvis.helper.cmd_prompt import run_command
+# from jarvis.helper import change_dir
+from jarvis.helper.cmd_prompt import run_command, change_dir
 
-
-@contextmanager
-def change_dir(path):
-    """
-    Context manager for changing the current working directory
-    """
-    print(f"Changing to directory: {path}")
-    original_dir = os.getcwd()
-    try:
-        os.chdir(path)
-        print(f"Current working directory: {os.getcwd()}")
-        yield
-    finally:
-        print(f"Changing back to original directory: {original_dir}")
-        os.chdir(original_dir)
-        print(f"Current working directory: {os.getcwd()}")
 
 
 def create_unity_gitignore():
@@ -124,7 +108,7 @@ def create_and_push_repo(path, repo_name: str):
         if not run_command(["git", "add", "."]):
             return
 
-        if not run_command(["git", "commit", "-m", "Initial commit"]):
+        if not run_command(["git", "commit", "-m", '"Initial commit"']):
             return
 
         if not run_command(["gh", "repo", "create", repo_name, "--private", "--source=.", "--push"]):

@@ -1,7 +1,5 @@
 import subprocess
 from jarvis.git.service import create_and_push_repo
-from jarvis.helper.cmd_prompt import run_command
-from jarvis.project_template.types import Project_Type_Name
 from dotenv import load_dotenv
 import os
 import time
@@ -15,18 +13,14 @@ class UnityService:
         print(f"Unity executable path: {self.unity_exe}")
         print(f"Unity projects path: {self.unity_projects_path}")
 
-    def create_project(self, project_name: str):
+    def create_project(self, project_name: str, project_path = None):
         print(f"Starting to create Unity project: {project_name}")
-        project_path = os.path.join(self.unity_projects_path, project_name)
+        project_path = os.path.join(project_path, project_name)
         print(f"Full project path: {project_path}")
 
-        # Create Unity project
-        log_file = os.path.join(project_path, "unity_create_log.txt")
         command = [
             self.unity_exe,
-            "-batchmode",
             "-createProject", project_path,
-            "-logFile", log_file,
             "-quit"
         ]
 
@@ -91,22 +85,6 @@ class UnityService:
         else:
             print(f"Unity process failed with return code {return_code}")
             return False
-
-    # def wait_for_unity_project(self, project_path, timeout=300):
-    #     print("Waiting for Unity to finish creating project files...")
-    #     start_time = time.time()
-    #     while time.time() - start_time < timeout:
-    #         if self.is_unity_project_ready(project_path):
-    #             print("Unity project files are ready.")
-    #             return True
-    #         time.sleep(5)  # Check every 5 seconds
-    #     print("Timeout waiting for Unity project files.")
-    #     return False
-
-    # def is_unity_project_ready(self, project_path):
-    #     Check for essential Unity project files/folders
-    #     essential_items = ['Assets', 'ProjectSettings', 'Packages']
-    #     return all(os.path.exists(os.path.join(project_path, item)) for item in essential_items)
     
 
     

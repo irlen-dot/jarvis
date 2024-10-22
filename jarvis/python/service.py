@@ -6,7 +6,7 @@ from langchain_core.tools import tool
 
 @tool
 def create_python_project(project_name: str, project_path: str = None):
-    """This tool is for creating python projects"""
+    """This tool is for creating python projects and returns the path of the project"""
 
     print(f"Python project with the name '{project_name}' is being created...")
 
@@ -40,6 +40,7 @@ def create_python_project(project_name: str, project_path: str = None):
     
     # Change back to original directory
     os.chdir(current_path)
+    return project_path
     
 def check_poetry_installation():
     try:

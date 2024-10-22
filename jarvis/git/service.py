@@ -2,7 +2,7 @@ import os
 
 # from jarvis.helper import change_dir
 from jarvis.helper.cmd_prompt import run_command, change_dir
-
+from langchain_core.tools import tool
 
 
 def create_unity_gitignore():
@@ -84,8 +84,11 @@ crashlytics-build.properties
         f.write(gitignore_content.strip())
     print("Created .gitignore file for Unity project")
 
+@tool
 def create_and_push_repo(path, repo_name: str):
+    """Creates a github repository and pushes all the commits"""
     print('Repository creation has started...')
+    print(f"The path is: {path}")
     if not os.path.isdir(path):
         print(f"Error: The directory {path} does not exist or is not accessible.")
         return
@@ -95,7 +98,8 @@ def create_and_push_repo(path, repo_name: str):
         
         if not run_command(["git", "init"]):
             return
-
+        
+        # TODO You need to check what project type is it and configure the gitignore based on it
         create_unity_gitignore()
 
         if not run_command(["git", "init"]):

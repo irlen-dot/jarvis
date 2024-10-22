@@ -5,7 +5,7 @@ from .helper.models.internal_model import InternalModelSelector
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableLambda
 from langchain.schema.output_parser import StrOutputParser
-from .project_template.controller import ProjectTemplateController
+from .project_template.controller import manage_project_temp_input
 
 
 class MainController(BaseController):
@@ -25,7 +25,7 @@ class MainController(BaseController):
 
         The input is: {input}
         """)
-        self.project_temp_controller = ProjectTemplateController()
+        # self.project_temp_controller = ProjectTemplateController()
 
 
 
@@ -41,7 +41,8 @@ class MainController(BaseController):
     def _manage_output(self, content: str, input: str):
         print(f"The output of filtering: {content}")
         if 'create_project' in content:
-            self.project_temp_controller.manage_input(input)
+            # self.project_temp_controller.manage_input(input)
+            manage_project_temp_input(input)
         elif 'load_music' in content:
             print('I am load_music')
         elif 'turn_on_music' in content:

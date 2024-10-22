@@ -111,7 +111,7 @@ def create_and_push_repo(path, repo_name: str):
         if not run_command(["git", "commit", "-m", '"Initial commit"']):
             return
 
-        if not run_command(["gh", "repo", "create", repo_name, "--private", "--source=.", "--push"]):
+        if not run_command(["gh", "repo", "create", f'"{repo_name}"', "--private", "--source=.", "--push"]):
             print("Error: Failed to create GitHub repository. Make sure Hub is installed and configured.")
             return
 

@@ -17,7 +17,7 @@ def _get_unity_projects_path() -> str:
 
 @tool
 def create_unity_project(project_name: str, project_path = None):
-    """This tool creates a unity project"""
+    """This tool creates a unity project and returns the path of the project"""
     print(f"Unity project with the name '{project_name}' is being created...")
 
     unity_projects_path = _get_unity_projects_path()
@@ -41,9 +41,9 @@ def create_unity_project(project_name: str, project_path = None):
         wait_for_unity_process(process)
         print("Unity project creation completed.")
         # Now create and push the repository
-        print("Creating and pushing repository...")
-        create_and_push_repo(project_path, project_name)
-        print("Repository creation and push completed.")
+        # print("Creating and pushing repository...")
+        # create_and_push_repo(project_path, project_name)
+        # print("Repository creation and push completed.")
     except subprocess.CalledProcessError as e:
         print("Failed to create Unity project.")
         print("Error:", e)
@@ -51,6 +51,7 @@ def create_unity_project(project_name: str, project_path = None):
     except Exception as e:
         print(f"An unexpected error occurred: {str(e)}")
     print("create_project function completed.")
+    return project_path
 
 def wait_for_unity_process(process, timeout=600):
         start_time = time.time()

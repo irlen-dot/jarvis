@@ -1,11 +1,12 @@
 from jarvis.helper.base_controller import BaseController
+from jarvis.project_template.controller import ProjectTempController
 from .helper.models.coding_model import CodingModelSelector
 from .helper.models.conversation_model import ConversationalModelSelector
 from .helper.models.internal_model import InternalModelSelector
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableLambda
 from langchain.schema.output_parser import StrOutputParser
-from .project_template.controller import manage_project_temp_input
+
 
 
 class MainController(BaseController):
@@ -25,14 +26,14 @@ class MainController(BaseController):
 
         The input is: {input}
         """)
-        # self.project_temp_controller = ProjectTemplateController()
+        self.project_temp_controller = ProjectTempController()
 
 
 
     def manage_input(self, input): 
         prompt = PromptTemplate.from_template(self.prompt_text)
         chain = (
-            prompt | self.model | StrOutputParser() | RunnableLambda(lambda x: self._manage_output(x, input))
+            prompt | self.llm | StrOutputParser() | RunnableLambda(lambda x: self._manage_output(x, input))
         )
         print("Filtering by project_temp, load_music, turn_music....")
         chain.invoke({ 'input': input })
@@ -42,7 +43,7 @@ class MainController(BaseController):
         print(f"The output of filtering: {content}")
         if 'create_project' in content:
             # self.project_temp_controller.manage_input(input)
-            manage_project_temp_input(input)
+            self.project_temp_controller.manage_input(input)
         elif 'load_music' in content:
             print('I am load_music')
         elif 'turn_on_music' in content:

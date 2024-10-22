@@ -3,7 +3,7 @@ from langchain_openai import ChatOpenAI
 
 
 class BaseController:
-    def __init__(self, model_selector_class, prompt_text=None):
-        model_selector = model_selector_class()
-        self.model: ChatOpenAI | ChatAnthropic = model_selector.get_model()
+    def __init__(self, llm_selector_class, prompt_text=None):
+        llm_selector = llm_selector_class()
+        self.llm: ChatOpenAI | ChatAnthropic = llm_selector.get_model()
         self.prompt_text = prompt_text

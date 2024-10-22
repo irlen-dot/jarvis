@@ -57,3 +57,8 @@ poetry env use python
 poetry shell
 poetry install
 python -m jarvis
+```
+
+6. Rename ".env.example" file into ".env"
+
+7. Enter your api keys into ".env" file

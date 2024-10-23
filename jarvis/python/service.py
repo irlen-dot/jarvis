@@ -1,131 +1,144 @@
 import subprocess
 import os
 import json
-from jarvis.helper.cmd_prompt import run_command
+from pathlib import Path
+from dataclasses import dataclass
+from typing import Optional
 from langchain_core.tools import tool
+from jarvis.helper.cmd_prompt import run_command
 
-@tool
-def create_python_project(project_name: str, project_path: str = None):
-    """This tool is for creating python projects and returns the path of the project"""
+@dataclass
+class ProjectSettings:
+    """Data class to hold project configuration settings"""
+    name: str
+    base_path: Optional[str] = None
+    python_version: str = "python"
 
-    print(f"Python project with the name '{project_name}' is being created...")
+    @property
+    def full_path(self) -> Path:
+        """Get the complete project path"""
+        base = self.base_path or os.getenv("PYTHON_PROJECT_PATH")
+        if not base:
+            raise ValueError("Project path not provided and PYTHON_PROJECT_PATH not set")
+        return Path(base) / self.name
 
-    if project_path is None:
-        project_path = os.getenv("PYTHON_PROJECT_PATH")
-    project_path = os.path.join(project_path, project_name)
-    current_path = os.getcwd()
+class VSCodeConfigurator:
+    """Handles VS Code configuration settings"""
     
-    # Create new project
-    subprocess.run(["poetry", "new", str(project_path)], check=True)
-    
-    # Change to project directory
-    os.chdir(project_path)
-    
-    # Create and activate virtual environment
-    subprocess.run(["poetry", "env", "use", "python"], check=True)
-    subprocess.run(["poetry", "shell"], check=True)
-    
-    # Get interpreter path
-    result = subprocess.run(["poetry", "env", "info", "--path"], capture_output=True, text=True, check=True)
-    interpreter_path = result.stdout.strip()
-    
-    print(f"Interpreter path: {interpreter_path}")
-    if interpreter_path:
-        set_vscode_interpreter(project_path, interpreter_path)
-    else:
-        print("Failed to get project interpreter path. VS Code interpreter not set.")
-    
-    # Open VS Code
-    run_command(["code", project_path])
-    
-    # Change back to original directory
-    os.chdir(current_path)
-    return project_path
-    
-def check_poetry_installation():
-    try:
-        subprocess.run(["poetry", "--version"], check=True, capture_output=True, text=True)
-    except subprocess.CalledProcessError:
-        raise EnvironmentError("Poetry is not installed. Please install Poetry and try again.")
-
-def set_vscode_interpreter(project_path, interpreter_path):
-    vscode_settings_dir = os.path.join(project_path, ".vscode")
-    os.makedirs(vscode_settings_dir, exist_ok=True)
-    
-    settings_file = os.path.join(vscode_settings_dir, "settings.json")
-    
-    settings = {}
-    if os.path.exists(settings_file):
-        with open(settings_file, 'r') as f:
-            settings = json.load(f)
-    
-    settings["python.defaultInterpreterPath"] = interpreter_path
-    settings["python.pythonPath"] = interpreter_path
-    
-    with open(settings_file, 'w') as f:
-        json.dump(settings, f, indent=4)
-    
-    print(f"VS Code interpreter set to: {interpreter_path}")
-
-
-class PythonService():
-    def __init__(self):
-        self.check_poetry_installation()
-    
-    def create_project(self, project_name: str, project_path: str = None):
-        if project_path is None:
-            project_path = os.getenv("PYTHON_PROJECT_PATH")
-        project_path = os.path.join(project_path, project_name)
-        current_path = os.getcwd()
+    @staticmethod
+    def setup_interpreter(project_path: Path, interpreter_path: str) -> None:
+        """Configure VS Code Python interpreter settings"""
+        vscode_dir = project_path / ".vscode"
+        vscode_dir.mkdir(exist_ok=True)
         
-        # Create new project
-        subprocess.run(["poetry", "new", str(project_path)], check=True)
-        
-        # Change to project directory
-        os.chdir(project_path)
-        
-        # Create and activate virtual environment
-        subprocess.run(["poetry", "env", "use", "python"], check=True)
-
-        subprocess.run(["poetry", "shell"], check=True)
-        
-        # Get interpreter path
-        result = subprocess.run(["poetry", "env", "info", "--path"], capture_output=True, text=True, check=True)
-        interpreter_path = result.stdout.strip()
-        
-        print(f"Interpreter path: {interpreter_path}")
-        if interpreter_path:
-            self.set_vscode_interpreter(project_path, interpreter_path)
-        else:
-            print("Failed to get project interpreter path. VS Code interpreter not set.")
-        
-        # Open VS Code
-        run_command(["code", project_path])
-        
-        # Change back to original directory
-        os.chdir(current_path)
-    
-    def check_poetry_installation(self):
-        try:
-            subprocess.run(["poetry", "--version"], check=True, capture_output=True, text=True)
-        except subprocess.CalledProcessError:
-            raise EnvironmentError("Poetry is not installed. Please install Poetry and try again.")
-    
-    def set_vscode_interpreter(self, project_path, interpreter_path):
-        vscode_settings_dir = os.path.join(project_path, ".vscode")
-        os.makedirs(vscode_settings_dir, exist_ok=True)
-        
-        settings_file = os.path.join(vscode_settings_dir, "settings.json")
-        
+        settings_file = vscode_dir / "settings.json"
         settings = {}
-        if os.path.exists(settings_file):
-            with open(settings_file, 'r') as f:
+        
+        if settings_file.exists():
+            with settings_file.open('r') as f:
                 settings = json.load(f)
         
-        settings["python.defaultInterpreterPath"] = interpreter_path
-        settings["python.pythonPath"] = interpreter_path
+        settings.update({
+            "python.defaultInterpreterPath": interpreter_path,
+            "python.pythonPath": interpreter_path
+        })
         
-        with open(settings_file, 'w') as f:
+        with settings_file.open('w') as f:
             json.dump(settings, f, indent=4)
         
         print(f"VS Code interpreter set to: {interpreter_path}")
+
+class PoetryEnvironment:
+    """Manages Poetry-related operations"""
+    
+    @staticmethod
+    def verify_installation() -> None:
+        """Check if Poetry is installed"""
+        try:
+            subprocess.run(
+                ["poetry", "--version"],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+        except subprocess.CalledProcessError:
+            raise EnvironmentError("Poetry is not installed. Please install Poetry and try again.")
+
+    @staticmethod
+    def create_project(project_path: Path) -> None:
+        """Create a new Poetry project"""
+        subprocess.run(["poetry", "new", str(project_path)], check=True)
+
+    @staticmethod
+    def setup_environment(python_version: str) -> str:
+        """Setup Poetry virtual environment and return interpreter path"""
+        commands = [
+            ["poetry", "env", "use", python_version],
+            ["poetry", "shell"]
+        ]
+        
+        for cmd in commands:
+            subprocess.run(cmd, check=True)
+        
+        result = subprocess.run(
+            ["poetry", "env", "info", "--path"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return result.stdout.strip()
+
+class PythonProjectManager:
+    """Main class for managing Python project creation and setup"""
+    
+    def __init__(self):
+        PoetryEnvironment.verify_installation()
+        
+    def create_project(self, settings: ProjectSettings) -> Path:
+        """Create and configure a new Python project"""
+        project_path = settings.full_path
+        original_dir = Path.cwd()
+        
+        try:
+            # Create and setup project
+            PoetryEnvironment.create_project(project_path)
+            os.chdir(project_path)
+            
+            # Setup virtual environment
+            interpreter_path = PoetryEnvironment.setup_environment(settings.python_version)
+            
+            if interpreter_path:
+                VSCodeConfigurator.setup_interpreter(project_path, interpreter_path)
+            else:
+                print("Warning: Failed to get interpreter path. VS Code settings not configured.")
+            
+            # Launch VS Code
+            run_command(["code", str(project_path)])
+            
+            return project_path
+            
+        finally:
+            os.chdir(original_dir)
+
+@tool
+def create_python_project(project_name: str, project_path: str = None) -> str:
+    """Create a new Python project with Poetry and VS Code configuration
+    
+    Args:
+        project_name: Name of the project to create
+        project_path: Optional base path for project creation
+    
+    Returns:
+        String representation of the created project's path
+    """
+    print(f"Creating Python project: '{project_name}'...")
+    
+    settings = ProjectSettings(
+        name=project_name,
+        base_path=project_path
+    )
+    
+    manager = PythonProjectManager()
+    created_path = manager.create_project(settings)
+    
+    return str(created_path)

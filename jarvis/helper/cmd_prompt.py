@@ -26,7 +26,7 @@ def change_dir(path):
         print(f"Current working directory: {os.getcwd()}")
 
 @tool
-def run_command(command):
+def run_command(command: str):
     """This tool runs commands in the command prompt."""
     if isinstance(command, list):
         command = ' '.join(command)

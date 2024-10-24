@@ -1,30 +1,22 @@
 from typing import List, Dict, Any, Optional
-from dataclasses import dataclass
-from enum import Enum
+
+from jarvis.codegen.service import write_file
+from jarvis.codegen.types import ToolResult, ToolType
 from jarvis.helper.base_controller import BaseController
+from jarvis.helper.cmd_prompt import run_command
 from jarvis.helper.models.coding_model import CodingModelSelector
 from langchain_core.tools import BaseTool
-from langchain.agents import AgentExecutor, create_openai_functions_agent
+from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools import tool
 
-class ToolType(Enum):
-    COMMAND_PROMPT = "command_prompt"
-    FILE_WRITER = "file_writer"
-
-@dataclass
-class ToolResult:
-    """Container for tool execution results"""
-    success: bool
-    message: str
-    data: Optional[Any] = None
 
 class CodeGenToolManager:
     """Manages the available coding tools and their execution"""
     
     def __init__(self):
         self.tools: Dict[str, BaseTool] = {
-            ToolType.COMMAND_PROMPT.value: execute_command,
+            ToolType.COMMAND_PROMPT.value: run_command,
             ToolType.FILE_WRITER.value: write_file
         }
         
@@ -49,10 +41,8 @@ class CodeGenController(BaseController):
     
     def __init__(self):
         self.tool_manager = CodeGenToolManager()
-        
-        # Create base prompt
-        base_prompt = ChatPromptTemplate.from_messages([
-            ("system", f"""You are an agent responsible for writing code. 
+        super().__init__(CodingModelSelector, 
+f"""You are an agent responsible for writing code. 
             You have these tools available:
             
             {self.tool_manager.get_tool_descriptions()}
@@ -62,18 +52,28 @@ class CodeGenController(BaseController):
             2. Execute tools in the correct order
             3. Provide clear feedback about actions taken
             4. Handle errors gracefully
-            5. Ask for clarification if the request is ambiguous"""),
+            5. Ask for clarification if the request is ambiguous.
+
+            Hints:
+            1. Add the path of the current directory. For example, If the file you want to create is "hello.py", then the path would be "current_directory_path + /hello.py"
+
+""")
+        
+        #             Hints:
+            # 1. If needed to create a file, then use run_command tools to create folders and files
+            # 2. If there is no need to create a file, then just use 
+        
+        
+        # Create base prompt
+        base_prompt = ChatPromptTemplate.from_messages([
+            ("system", self.prompt_text),
             MessagesPlaceholder(variable_name="chat_history"),
             ("human", "{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ])
         
-        # Initialize model and agent
-        super().__init__(CodingModelSelector)
-        self.llm = self.get_llm()
-        
         # Create agent with tools
-        self.agent = create_openai_functions_agent(
+        self.agent = create_tool_calling_agent(
             llm=self.llm,
             prompt=base_prompt,
             tools=self.tool_manager.get_available_tools()
@@ -87,8 +87,11 @@ class CodeGenController(BaseController):
             handle_parsing_errors=True
         )
     
-    async def manage_input(self, input: str) -> Dict[str, Any]:
+    async def manage_input(self, input: str, path: str) -> Dict[str, Any]:
         """Process user input and execute appropriate tools"""
+
+        input = input + f"\n\n The current path of the directory is: {path}"
+
         try:
             # Execute agent with input
             result = await self.agent_executor.ainvoke(

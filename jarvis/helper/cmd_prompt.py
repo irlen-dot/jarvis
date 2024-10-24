@@ -2,6 +2,7 @@ import os
 import subprocess
 from contextlib import contextmanager
 from threading import local
+from langchain_core.tools import tool
 
 # Thread-local storage to keep track of the current directory
 _thread_local = local()
@@ -24,12 +25,11 @@ def change_dir(path):
         _thread_local.current_dir = original_dir
         print(f"Current working directory: {os.getcwd()}")
 
+@tool
 def run_command(command):
+    """This tool runs commands in the command prompt."""
     if isinstance(command, list):
         command = ' '.join(command)
-
-    # current_dir = getattr(_thread_local, 'current_dir', os.getcwd())
-    # full_command = f'cd /d "{current_dir}" && {command}' if os.name == 'nt' else f'cd "{current_dir}"; {command}'
     
     try:
         result = subprocess.run(command, check=True, capture_output=True, text=True, shell=True)

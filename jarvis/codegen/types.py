@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Optional
 class ToolType(Enum):
     COMMAND_PROMPT = "command_prompt"
     FILE_WRITER = "file_writer"
+    FILE_READER = "file_reader"
 
 @dataclass
 class ToolResult:

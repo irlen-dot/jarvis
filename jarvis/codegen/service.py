@@ -31,3 +31,24 @@ def write_file(content: str, file_path: Union[str, Path], create_dirs: Optional[
    except Exception as e:
        print(f"Error writing file: {str(e)}")
        return False
+   
+@tool
+def read_file(file_path):
+    """
+    Read content from a file at the specified path.
+    
+    Args:
+        file_path: Path of the file to read
+        
+    Returns:
+        str: Content of the file if successful
+        str: Error message if reading fails
+    """
+    try:
+        with open(file_path, 'r') as file:
+            content = file.read()
+            return content
+    except FileNotFoundError:
+        return "Error: File not found"
+    except Exception as e:
+        return f"Error: {str(e)}"

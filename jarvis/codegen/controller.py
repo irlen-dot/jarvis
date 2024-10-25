@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
 
-from jarvis.codegen.service import write_file
+from jarvis.codegen.service import read_file, write_file
 from jarvis.codegen.types import ToolResult, ToolType
 from jarvis.helper.base_controller import BaseController
 from jarvis.helper.cmd_prompt import run_command
@@ -17,12 +17,14 @@ class CodeGenToolManager:
     def __init__(self):
         self.tools: Dict[str, BaseTool] = {
             ToolType.COMMAND_PROMPT.value: run_command,
-            ToolType.FILE_WRITER.value: write_file
+            ToolType.FILE_WRITER.value: write_file,
+            ToolType.FILE_READER.value: read_file
         }
         
         self.tool_descriptions = {
             ToolType.COMMAND_PROMPT.value: "Execute commands in the command prompt",
-            ToolType.FILE_WRITER.value: "Write code or content to files"
+            ToolType.FILE_WRITER.value: "Write code or content to files",
+            ToolType.FILE_READER.value: "Read the content of the file"
         }
     
     def get_available_tools(self) -> List[BaseTool]:
@@ -56,12 +58,8 @@ f"""You are an agent responsible for writing code.
 
             Hints:
             1. Add the path of the current directory. For example, If the file you want to create is "hello.py", then the path would be "current_directory_path + /hello.py"
-
-""")
-        
-        #             Hints:
-            # 1. If needed to create a file, then use run_command tools to create folders and files
-            # 2. If there is no need to create a file, then just use 
+            2. If there are some dependencies that you have to install, then install them using run_command tool.
+""") 
         
         
         # Create base prompt

@@ -1,9 +1,10 @@
-from typing import List, Dict, Any, Optional
-
+from pathlib import Path
+from typing import List, Dict, Any
 from jarvis.codegen.service import read_file, write_file
 from jarvis.codegen.types import ToolResult, ToolType
 from jarvis.helper.base_controller import BaseController
 from jarvis.helper.cmd_prompt import run_command
+from jarvis.helper.db import Database, Session
 from jarvis.helper.models.coding_model import CodingModelSelector
 from langchain_core.tools import BaseTool
 from langchain.agents import AgentExecutor, create_tool_calling_agent
@@ -59,9 +60,9 @@ f"""You are an agent responsible for writing code.
             Hints:
             1. Add the path of the current directory. For example, If the file you want to create is "hello.py", then the path would be "current_directory_path + /hello.py"
             2. If there are some dependencies that you have to install, then install them using run_command tool.
-""") 
-        
-        
+""")
+        self.db = Database()
+
         # Create base prompt
         base_prompt = ChatPromptTemplate.from_messages([
             ("system", self.prompt_text),
@@ -87,17 +88,23 @@ f"""You are an agent responsible for writing code.
     
     async def manage_input(self, input: str, path: str) -> Dict[str, Any]:
         """Process user input and execute appropriate tools"""
+        session: Session = self.db.find_session_by_path(path)
+
+        
+        
+        path = Path(path)
 
         input = input + f"\n\n The current path of the directory is: {path}"
 
+
         try:
             # Execute agent with input
-            result = await self.agent_executor.ainvoke(
-                {
-                    "input": input,
-                    "chat_history": []  # Can be extended to maintain chat history
-                }
-            )
+            # result = await self.agent_executor.ainvoke(
+            #     {
+            #         "input": input,
+            #         "chat_history": []  # Can be extended to maintain chat history
+            #     }
+            # )
             
             return {
                 "success": True,

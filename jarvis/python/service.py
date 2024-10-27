@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Optional
 from langchain_core.tools import tool
 from jarvis.helper.cmd_prompt import run_command
+from jarvis.helper.db import Database
 
 @dataclass
 class ProjectSettings:
@@ -93,12 +94,13 @@ class PythonProjectManager:
     
     def __init__(self):
         PoetryEnvironment.verify_installation()
+        self.db = Database()
         
     def create_project(self, settings: ProjectSettings) -> Path:
         """Create and configure a new Python project"""
         project_path = settings.full_path
         original_dir = Path.cwd()
-        
+        self.db.create_session(str(project_path))
         try:
             # Create and setup project
             PoetryEnvironment.create_project(project_path)
@@ -113,7 +115,7 @@ class PythonProjectManager:
                 print("Warning: Failed to get interpreter path. VS Code settings not configured.")
             
             # Launch VS Code
-            run_command(["code", str(project_path)])
+            run_command(f"code {str(project_path)}")
             
             return project_path
             

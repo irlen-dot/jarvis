@@ -32,6 +32,7 @@ class ProjectTempController(BaseController):
 
     def manage_input(self, input: str):
         output = self.agent_executor.invoke({"input": input})
+        print(f"The raw output of the agent: {output}")
         result = json.load(output)
         self.db.add_message(session_id=result['session_id'], content=result['content'], role=Role.AI)
         print(f"The agent executor output: {result}")

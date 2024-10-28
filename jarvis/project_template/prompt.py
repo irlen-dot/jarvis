@@ -17,7 +17,7 @@ project_templ_controller_prompt = """You are a helpful assistant that creates pr
               1. Only call the create_python_project tool
               
               
-            Output: You have to ouput with a Json with properties 'success: boolean, content: string, path_to_project: string, session_id: int'. The 'success' field should show
+            Output: You have to ouput with a Json with properties 'success: boolean, content: string, path_to_project: string, session_id: int, project_type'. The 'success' field should show
             if the operation was succesful or not. The 'content' field should show the real output of the agent, for example, 'content: the project was created successfuly with python'. The project_path
-            should show the path of where the project was created, it is the output of create_unity_project and create_python_project
+            should show the path of where the project was created, it is the output of create_unity_project and create_python_project. The project_type shows is it python or unity.
               """

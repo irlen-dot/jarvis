@@ -5,10 +5,17 @@ from datetime import datetime
 from typing import Optional, List
 import os
 from dotenv import load_dotenv
-from sqlalchemy.orm import relationship, sessionmaker, scoped_session
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import relationship, sessionmaker, scoped_session, DeclarativeBase
+from enum import Enum
+from sqlalchemy import Enum as SQLAlchemyEnum
+
 
 load_dotenv()
+
+# Define the Role enum
+class Role(str, Enum):
+    AI = "AI"
+    HUMAN = "Human"
 
 # Create SQLAlchemy engine and base
 engine = create_engine(os.getenv('DATABASE_URL'))
@@ -31,14 +38,13 @@ class Message(Base):
     id = Column(Integer, primary_key=True)
     session_id = Column(Integer, ForeignKey('sessions.id'), nullable=False)
     content = Column(String, nullable=False)
-    role = Column(String, nullable=False)  # 'user' or 'assistant'
+    role = Column(SQLAlchemyEnum(Role, name='role_enum'), nullable=False)  # Using Enum type
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     session = relationship("Session", back_populates="messages")
 
 # Create all tables
 Base.metadata.create_all(engine)
-
 
 class Database:
     def __init__(self):
@@ -105,12 +111,12 @@ class Database:
         finally:
             db_session.close()
 
-    def add_message(self, session_id: int, content: str, role: str):
+    def add_message(self, session_id: int, content: str, role: Role):
         """Add a message to a session"""
         db_session = self.SessionLocal()
         try:
             new_message = Message(
-                sessionId=session_id,
+                session_id=session_id,
                 content=content,
                 role=role
             )

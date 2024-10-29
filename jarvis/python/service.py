@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Optional
 from langchain_core.tools import tool
 from jarvis.helper.cmd_prompt import run_command
-from jarvis.helper.db import Database
+from jarvis.helper.db import Database, Role
 
 @dataclass
 class ProjectSettings:
@@ -100,7 +100,7 @@ class PythonProjectManager:
         """Create and configure a new Python project"""
         project_path = settings.full_path
         original_dir = Path.cwd()
-        self.db.create_session(str(project_path))
+        session = self.db.create_session(str(project_path))
         try:
             # Create and setup project
             PoetryEnvironment.create_project(project_path)
@@ -117,10 +117,13 @@ class PythonProjectManager:
             # Launch VS Code
             run_command(f"code {str(project_path)}")
             
-            return project_path
+            self.db.add_message(session_id=session.id, content=f"create a python project in path {settings.full_path}", role=Role.HUMAN)
+
+            return project_path, session.id
             
         finally:
             os.chdir(original_dir)
+
 
 @tool
 def create_python_project(project_name: str, project_path: str = None) -> str:
@@ -131,7 +134,8 @@ def create_python_project(project_name: str, project_path: str = None) -> str:
         project_path: Optional base path for project creation
     
     Returns:
-        String representation of the created project's path
+        1. String representation of the created project's path
+        2. The ID of the session the project is attached to
     """
     print(f"Creating Python project: '{project_name}'...")
     
@@ -141,6 +145,6 @@ def create_python_project(project_name: str, project_path: str = None) -> str:
     )
     
     manager = PythonProjectManager()
-    created_path = manager.create_project(settings)
+    created_path, session_id = manager.create_project(settings)
     
-    return str(created_path)
+    return str(created_path), session_id 

@@ -30,6 +30,7 @@ class ProjectTempController(BaseController):
         self.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
         self.db = Database()
 
+    # TODO move the session db logic to here.
     def manage_input(self, input: str):
         output = self.agent_executor.invoke({"input": input})
         print(f"The raw output of the agent: {output}")

@@ -88,9 +88,6 @@ f"""You are an agent responsible for writing code.
     
     async def manage_input(self, input: str, path: str) -> Dict[str, Any]:
         """Process user input and execute appropriate tools"""
-        session: Session = self.db.find_session_by_path(path)
-
-        
         
         path = Path(path)
 
@@ -99,12 +96,14 @@ f"""You are an agent responsible for writing code.
 
         try:
             # Execute agent with input
-            # result = await self.agent_executor.ainvoke(
-            #     {
-            #         "input": input,
-            #         "chat_history": []  # Can be extended to maintain chat history
-            #     }
-            # )
+            result = await self.agent_executor.ainvoke(
+                {
+                    "input": input,
+                    "chat_history": []  # Can be extended to maintain chat history
+                }
+            )
+
+            
             
             return {
                 "success": True,

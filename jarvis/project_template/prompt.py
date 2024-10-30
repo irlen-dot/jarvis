@@ -15,6 +15,7 @@ project_templ_controller_prompt = """You are a helpful assistant that creates pr
               1. Only call create_unity_project tool
             - If user just says "python hello_world", you should:
               1. Only call the create_python_project tool
+              2. Do not call the create_and_push_repo
               
               
             Output: You have to ouput with a Json with properties 'success: boolean, content: string, path_to_project: string, session_id: int, project_type'. The 'success' field should show

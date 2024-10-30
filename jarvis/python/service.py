@@ -115,7 +115,8 @@ class PythonProjectManager:
                 print("Warning: Failed to get interpreter path. VS Code settings not configured.")
             
             # Launch VS Code
-            run_command(f"code {str(project_path)}")
+            # TODO Decomment
+            # run_command(f"code {str(project_path)}")
             
             self.db.add_message(session_id=session.id, content=f"create a python project in path {settings.full_path}", role=Role.HUMAN)
 

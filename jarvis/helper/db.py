@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, MetaData
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, MetaData, desc
 from sqlalchemy.orm import relationship, declarative_base, Session as SQLAlchemySession
 from sqlalchemy.sql import func
 from datetime import datetime
@@ -69,6 +69,11 @@ class Database:
         scoped_session(self.SessionLocal)
         self.Session = Session()
 
+    @property
+    def session(self):
+        session_local = self.SessionLocal()
+        return session_local
+
     def create_session(self, path: str):
         """Create a new coding session"""
         db_session = self.SessionLocal()
@@ -92,18 +97,25 @@ class Database:
         print("Parsed path:", path_parsed)
         print("Like pattern:", like_pattern)
         
-        db_session = self.SessionLocal()
+        # It is just a connection to the Session table
+        db = self.session
+
         try:
-            query = db_session.query(Session)\
+            query = db.query(Session)\
                 .filter(Session.path.like(like_pattern))\
                 .order_by(Session.created_at.desc())
             
             result = query.first()
             return result
         finally:
-            db_session.close()
+            db.close()
 
-    def get_session(self, session_id: int):
+    def get_latest_session(self) -> Session:
+        session = self.session.query(Session).first()
+        # session = db.query().order_by(desc(self.Session.created_at)).first()
+        return session
+
+    def get_session(self, session_id: int) -> Session:
         """Get a session by ID"""
         db_session = self.SessionLocal()
         try:
@@ -140,15 +152,15 @@ class Database:
         finally:
             db_session.close()
 
-    def get_latest_session(self, path: str):
-        """Get the latest session for a specific path"""
-        db_session = self.SessionLocal()
-        try:
-            return (
-                db_session.query(Session)
-                .filter(Session.path == path)
-                .order_by(Session.id.desc())
-                .first()
-            )
-        finally:
+    # def get_latest_session(self, path: str):
+    #     """Get the latest session for a specific path"""
+    #     db_session = self.SessionLocal()
+    #     try:
+    #         return (
+    #             db_session.query(Session)
+    #             .filter(Session.path == path)
+    #             .order_by(Session.id.desc())
+    #             .first()
+    #         )
+    #     finally:
             db_session.close()

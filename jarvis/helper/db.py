@@ -112,7 +112,6 @@ class Database:
 
     def get_latest_session(self) -> Session:
         session = self.session.query(Session).first()
-        # session = db.query().order_by(desc(self.Session.created_at)).first()
         return session
 
     def get_session(self, session_id: int) -> Session:
@@ -152,15 +151,15 @@ class Database:
         finally:
             db_session.close()
 
-    # def get_latest_session(self, path: str):
-    #     """Get the latest session for a specific path"""
-    #     db_session = self.SessionLocal()
-    #     try:
-    #         return (
-    #             db_session.query(Session)
-    #             .filter(Session.path == path)
-    #             .order_by(Session.id.desc())
-    #             .first()
-    #         )
-    #     finally:
+    def get_latest_session_by_path(self, path: str):
+        """Get the latest session for a specific path"""
+        db_session = self.SessionLocal()
+        try:
+            return (
+                db_session.query(Session)
+                .filter(Session.path == path)
+                .order_by(Session.id.desc())
+                .first()
+            )
+        finally:
             db_session.close()

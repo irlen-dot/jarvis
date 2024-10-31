@@ -1,9 +1,11 @@
-from typing import List, Dict, Any, Optional
-
+import json
+from pathlib import Path
+from typing import List, Dict, Any
 from jarvis.codegen.service import read_file, write_file
 from jarvis.codegen.types import ToolResult, ToolType
 from jarvis.helper.base_controller import BaseController
 from jarvis.helper.cmd_prompt import run_command
+from jarvis.helper.db import Database, Session
 from jarvis.helper.models.coding_model import CodingModelSelector
 from langchain_core.tools import BaseTool
 from langchain.agents import AgentExecutor, create_tool_calling_agent
@@ -26,6 +28,7 @@ class CodeGenToolManager:
             ToolType.FILE_WRITER.value: "Write code or content to files",
             ToolType.FILE_READER.value: "Read the content of the file"
         }
+
     
     def get_available_tools(self) -> List[BaseTool]:
         """Get list of available tools"""
@@ -45,7 +48,7 @@ class CodeGenController(BaseController):
         self.tool_manager = CodeGenToolManager()
         super().__init__(CodingModelSelector, 
 f"""You are an agent responsible for writing code. 
-            You have these tools available:
+            You ave these tools havailable:
             
             {self.tool_manager.get_tool_descriptions()}
             
@@ -59,9 +62,9 @@ f"""You are an agent responsible for writing code.
             Hints:
             1. Add the path of the current directory. For example, If the file you want to create is "hello.py", then the path would be "current_directory_path + /hello.py"
             2. If there are some dependencies that you have to install, then install them using run_command tool.
-""") 
-        
-        
+""")
+        self.db = Database()
+
         # Create base prompt
         base_prompt = ChatPromptTemplate.from_messages([
             ("system", self.prompt_text),
@@ -87,6 +90,8 @@ f"""You are an agent responsible for writing code.
     
     async def manage_input(self, input: str, path: str) -> Dict[str, Any]:
         """Process user input and execute appropriate tools"""
+        
+        path = Path(path)
 
         input = input + f"\n\n The current path of the directory is: {path}"
 
@@ -98,11 +103,19 @@ f"""You are an agent responsible for writing code.
                     "chat_history": []  # Can be extended to maintain chat history
                 }
             )
+
+            output: str = result['output']
+            json_str = output.split('}')[0] + '}'
+            output: Dict[str, Any] = json.loads(json_str)
             
+            session = self.db.get_latest_session_by_path(path)
+
+            self.db.add_message(session_id=session.id, content=output.get('content'))
+
             return {
                 "success": True,
                 "message": "Tools executed successfully",
-                "result": result
+                "result": output
             }
             
         except Exception as e:

@@ -5,6 +5,8 @@ import asyncio
 from pathlib import Path
 from typing import Optional
 
+from jarvis.main_controller import MainController
+
 # Ensure project root is in Python path
 def setup_python_path() -> None:
     """Add project root to Python path if needed."""
@@ -20,7 +22,8 @@ class CodeGenCLI:
     def __init__(self):
         """Initialize CLI with working directory and controller."""
         self.original_working_dir = Path.cwd()
-        self.controller = CodeGenController()
+        self.code_controller = CodeGenController()
+        self.main_controller = MainController()
         
     def create_parser(self) -> argparse.ArgumentParser:
         """Create and configure argument parser.
@@ -44,6 +47,13 @@ class CodeGenCLI:
             metavar='STRING',
             help='LLM prompt for code generation'
         )
+
+        parser.add_argument(
+            '-p', '--prompt',
+            type=str,
+            metavar='STRING',
+            help='Basic LLM prompt'
+        )
         
         return parser
     
@@ -66,10 +76,15 @@ class CodeGenCLI:
         
         if args.writecode:
             print(f"Working directory: {self.original_working_dir}")
-            await self.controller.manage_input(
+            await self.code_controller.manage_input(
                 args.writecode,
                 str(self.original_working_dir)
             )
+        # if args.prompt:
+        #     self.main_controller.manage_input(
+        #         args.prompt,
+        #         str(self.original_working_dir)
+        #     )
         
         return 0
 

@@ -30,7 +30,8 @@ class MainController(BaseController):
 
 
 
-    def manage_input(self, input): 
+    def manage_input(self, input, current_path = None):
+        self.current_path = current_path
         prompt = PromptTemplate.from_template(self.prompt_text)
         chain = (
             prompt | self.llm | StrOutputParser() | RunnableLambda(lambda x: self._manage_output(x, input))
@@ -42,8 +43,7 @@ class MainController(BaseController):
     def _manage_output(self, content: str, input: str):
         print(f"The output of filtering: {content}")
         if 'create_project' in content:
-            # self.project_temp_controller.manage_input(input)
-            self.project_temp_controller.manage_input(input)
+            self.project_temp_controller.manage_input(input, self.current_path)
         elif 'load_music' in content:
             print('I am load_music')
         elif 'turn_on_music' in content:

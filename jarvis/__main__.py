@@ -1,3 +1,4 @@
+from jarvis.youtube.service import youtube_to_mp3
 from .main_controller import MainController
 
 def main():

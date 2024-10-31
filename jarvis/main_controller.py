@@ -1,4 +1,5 @@
 from jarvis.helper.base_controller import BaseController
+from jarvis.music.controller import MusicController
 from jarvis.project_template.controller import ProjectTempController
 from .helper.models.coding_model import CodingModelSelector
 from .helper.models.conversation_model import ConversationalModelSelector
@@ -17,17 +18,18 @@ class MainController(BaseController):
         'download music',
         'turn on music'.
 
-        the output should be: 'create_project', 'load_music', 'turn_on_music'
+        the output should be: 'create_project' or 'music'
 
         examples:
         Input - 'flutter project named my_project' Output - 'create_project',
-        Input - 'https://www.youtube.com/watch?v=YG3EhWlBaoI' Output - 'load_music',
-        Input - 'Turn on lo/fi' Output - 'turn_on_music'
+        Input - 'python Hello_World and push to git' - 'create_project',
+        Input - 'https://www.youtube.com/watch?v=YG3EhWlBaoI into folder rap' Output - 'music',
+        Input - 'Turn on lo/fi' Output - 'music'
 
         The input is: {input}
         """)
         self.project_temp_controller = ProjectTempController()
-
+        self.music_controller = MusicController()
 
 
     def manage_input(self, input, current_path = None):
@@ -44,10 +46,8 @@ class MainController(BaseController):
         print(f"The output of filtering: {content}")
         if 'create_project' in content:
             self.project_temp_controller.manage_input(input, self.current_path)
-        elif 'load_music' in content:
-            print('I am load_music')
-        elif 'turn_on_music' in content:
-            print('I am turn_on_music')
+        elif 'music' in content:
+            self.music_controller.manage_input(input, self.current_path)
         else:
             raise ValueError('The question could not be determined neither as "contents" neither as "coding"')
         

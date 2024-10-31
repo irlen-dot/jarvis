@@ -1,5 +1,3 @@
-from jarvis.helper.cmd_prompt import run_command
-from jarvis.python.service import PythonService
 from .main_controller import MainController
 
 def main():

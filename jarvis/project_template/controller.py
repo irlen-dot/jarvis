@@ -1,9 +1,13 @@
+import json
+from typing import Any, Dict
 from jarvis.git.service import create_and_push_repo
 from jarvis.helper.base_controller import BaseController
+from jarvis.helper.db import Database, Role
 from jarvis.helper.models.coding_model import CodingModelSelector
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.agents import AgentExecutor, create_tool_calling_agent
-
+import pdb
+from jarvis.project_template.prompt import project_templ_controller_prompt
 from jarvis.python.service import create_python_project
 from jarvis.unity.service import create_unity_project
 
@@ -16,29 +20,29 @@ class ProjectTempController(BaseController):
             [
                 (
                     "system",
-                    """You are a helpful assistant that creates projects and sets up git repositories.
-
-            Process:
-            1. When a user requests a project creation, use either python_project or unity_project tool.
-            2. After creating the project, if the user mentioned anything about git/github/repository, use the git_repo tool with the returned project path.
-            3. Always return the final results to the user.
-
-            Example flow:
-            - If user says "Create a python project called test with git", you should:
-              1. Call python_project tool
-              2. Take the returned path
-              3. Call git_repo tool with that path
-            - If user just says "Create a unity project called game", you should:
-              1. Only call unity_project tool""",
+                    project_templ_controller_prompt,
                 ),
-                # ("placeholder", "{chat_history}"),
+                ("placeholder", "{chat_history}"),
                 ("human", "{input}"),
                 ("placeholder", "{agent_scratchpad}"),
             ]
         )
         agent = create_tool_calling_agent(self.llm, tools, prompt)
         self.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+        self.db = Database()
 
-    def manage_input(self, input: str):
-        self.agent_executor.invoke({"input": input})
+   # Question to Claude: If I have a chat history, how can I refresh the history with new messages? And is it even nessecary
 
+
+    # TODO move the session db logic to here.
+    def manage_input(self, input: str, current_path) -> Dict[str, Any]:
+        invoke_query = {"input": input }
+        if current_path:
+            invoke_query["current_path"] = current_path        
+        
+        result = self.agent_executor.invoke(invoke_query)
+        json_str = result['output'].split('}')[0] + '}'
+        output: Dict[str, Any] = json.loads(json_str)
+        self.db.add_message(session_id=output.get('session_id'), content=output.get('content'), role=Role.AI)
+
+        return output

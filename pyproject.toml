@@ -12,7 +12,14 @@ python-dotenv = "^1.0.1"
 langchain-anthropic = "^0.2.3"
 langchain-openai = "^0.2.2"
 langgraph = "^0.2.39"
+psycopg2 = "^2.9.10"
+prisma = "^0.15.0"
+sqlalchemy = "^2.0.36"
+psycopg2-binary = "^2.9.10"
 
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
 
 [build-system]
 requires = ["poetry-core"]

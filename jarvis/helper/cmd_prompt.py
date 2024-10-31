@@ -26,7 +26,7 @@ def change_dir(path):
         print(f"Current working directory: {os.getcwd()}")
 
 @tool
-def run_command(command: str):
+def run_command(command):
     """This tool runs commands in the command prompt."""
     if isinstance(command, list):
         command = ' '.join(command)
@@ -34,7 +34,7 @@ def run_command(command: str):
     try:
         result = subprocess.run(command, check=True, capture_output=True, text=True, shell=True)
         print(f"Command '{command}' executed successfully in {command}.")
-        
+
         output = result.stdout
         if result.stderr:
             output += "\nError output:\n" + result.stderr

@@ -48,7 +48,7 @@ class CodeGenController(BaseController):
         self.tool_manager = CodeGenToolManager()
         super().__init__(CodingModelSelector, 
 f"""You are an agent responsible for writing code. 
-            You have these tools available:
+            You ave these tools havailable:
             
             {self.tool_manager.get_tool_descriptions()}
             

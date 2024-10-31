@@ -80,11 +80,11 @@ class CodeGenCLI:
                 args.writecode,
                 str(self.original_working_dir)
             )
-        if args.prompt:
-            self.main_controller.manage_input(
-                args.prompt,
-                str(self.original_working_dir)
-            )
+        # if args.prompt:
+        #     self.main_controller.manage_input(
+        #         args.prompt,
+        #         str(self.original_working_dir)
+        #     )
         
         return 0
 

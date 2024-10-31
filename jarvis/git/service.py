@@ -1,4 +1,5 @@
 import os
+import pdb
 
 # from jarvis.helper import change_dir
 from jarvis.git.types import CreateRepoInput
@@ -81,7 +82,7 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 """
-    with open(".gitignore", "w") as f:
+    with open(".gitignore w") as f:
         f.write(gitignore_content.strip())
     print("Created .gitignore file for Unity project")
 
@@ -89,7 +90,7 @@ def create_gitignore(project_type: str):
     if 'unity' in project_type:
         create_unity_gitignore()
 
-@tool(args_schema=CreateRepoInput)
+# @tool(args_schema=CreateRepoInput)
 def create_and_push_repo(path, repo_name: str, project_type: str):
     """Creates a github repository and pushes all the commits"""
     print('Repository creation has started...')
@@ -102,30 +103,30 @@ def create_and_push_repo(path, repo_name: str, project_type: str):
     with change_dir(path):
         print("--- Starting repository creation process ---")
         
-        if not run_command(["git", "init"]):
+        if not run_command("git init"):
             return
         
         # TODO You need to check what project type is it and configure the gitignore based on it
         create_gitignore(project_type)
 
-        if not run_command(["git", "init"]):
+        if not run_command("git init"):
             return
 
-        with open("README.md", "w") as f:
-            f.write("# Unity Project\n\nThis repository contains a Unity project created automatically.")
+        # with open("README.md w") as f:
+            # f.write("# Unity Project\n\nThis repository contains a Unity project created automatically.")
 
     
-        if not run_command(["git", "add", "."]):
+        if not run_command("git add ."):
             return
 
-        if not run_command(["git", "commit", "-m", '"Initial commit"']):
+        if not run_command("git commit -m 'Initial commit'"):
             return
 
-        if not run_command(["gh", "repo", "create", f'"{repo_name}"', "--private", "--source=.", "--push"]):
+        if not run_command(f"gh repo create '{repo_name}' --private --source=. --push"):
             print("Error: Failed to create GitHub repository. Make sure Hub is installed and configured.")
             return
 
-        # if not run_command(["git", "push", "-u", "origin", "main"]):
+        # if not run_command(["git push -u origin main"]):
         #     return
 
         print("Repository successfully created and pushed to GitHub!")

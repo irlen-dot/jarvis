@@ -4,13 +4,15 @@ import time
 from langchain.tools import tool
 from dotenv import load_dotenv
 
+from jarvis.helper.db import Database
+
 load_dotenv()
 
 class UnityProjectCreator:
     def __init__(self):
         self.unity_exe = os.getenv("UNITY_PATH")
         self.projects_path = os.getenv("UNITY_PROJECT_PATH")
-        
+        self.db = Database()
         if not self.unity_exe or not self.projects_path:
             raise ValueError("Unity path or projects path not found in environment variables")
 
@@ -63,6 +65,8 @@ class UnityProjectCreator:
             "-createProject", final_path,
             "-quit"
         ]
+
+        session = self.db.create_session(path=final_path)
         
         try:
             process = subprocess.Popen(
@@ -72,13 +76,13 @@ class UnityProjectCreator:
             )
             
             self._wait_for_process(process)
-            return final_path
+            return final_path, session.id
             
         except (subprocess.CalledProcessError, TimeoutError) as e:
             raise RuntimeError(f"Failed to create Unity project: {str(e)}")
 
 @tool
-def create_unity_project(project_name: str, project_path: str | None = None) -> str:
+def create_unity_project(project_name: str, project_path: str | None = None):
     """
     Tool to create a Unity project.
     

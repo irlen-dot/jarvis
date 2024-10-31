@@ -36,7 +36,6 @@ class ProjectTempController(BaseController):
 
     # TODO move the session db logic to here.
     def manage_input(self, input: str, current_path) -> Dict[str, Any]:
-        session = self.db.get_latest_session_by_path(current_path)
         invoke_query = {"input": input }
         if current_path:
             invoke_query["current_path"] = current_path        
@@ -44,7 +43,6 @@ class ProjectTempController(BaseController):
         result = self.agent_executor.invoke(invoke_query)
         json_str = result['output'].split('}')[0] + '}'
         output: Dict[str, Any] = json.loads(json_str)
-
-        self.db.add_message(session_id=session.id, content=output.get('content'), role=Role.AI)
+        self.db.add_message(session_id=output.get('session_id'), content=output.get('content'), role=Role.AI)
 
         return output

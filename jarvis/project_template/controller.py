@@ -31,12 +31,20 @@ class ProjectTempController(BaseController):
         self.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
         self.db = Database()
 
-    # TODO move the session db logic to here.
-    def manage_input(self, input: str) -> Dict[str, Any]:
-        result = self.agent_executor.invoke({"input": input})
-        json_str = result['output'].split('}')[0] + '}'  # Get everything up to first }
-        output = json.loads(json_str)
+   # Question to Claude: If I have a chat history, how can I refresh the history with new messages? And is it even nessecary
 
-        self.db.add_message(session_id=output.get('session_id'), content=output.get('content'), role=Role.AI)
+
+    # TODO move the session db logic to here.
+    def manage_input(self, input: str, current_path) -> Dict[str, Any]:
+        session = self.db.get_latest_session_by_path(current_path)
+        invoke_query = {"input": input }
+        if current_path:
+            invoke_query["current_path"] = current_path        
         
+        result = self.agent_executor.invoke(invoke_query)
+        json_str = result['output'].split('}')[0] + '}'
+        output: Dict[str, Any] = json.loads(json_str)
+
+        self.db.add_message(session_id=session.id, content=output.get('content'), role=Role.AI)
+
         return output

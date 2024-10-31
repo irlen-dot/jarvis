@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import List, Dict, Any
 from jarvis.codegen.service import read_file, write_file
@@ -27,6 +28,7 @@ class CodeGenToolManager:
             ToolType.FILE_WRITER.value: "Write code or content to files",
             ToolType.FILE_READER.value: "Read the content of the file"
         }
+
     
     def get_available_tools(self) -> List[BaseTool]:
         """Get list of available tools"""
@@ -93,7 +95,6 @@ f"""You are an agent responsible for writing code.
 
         input = input + f"\n\n The current path of the directory is: {path}"
 
-
         try:
             # Execute agent with input
             result = await self.agent_executor.ainvoke(
@@ -103,12 +104,18 @@ f"""You are an agent responsible for writing code.
                 }
             )
 
+            output: str = result['output']
+            json_str = output.split('}')[0] + '}'
+            output: Dict[str, Any] = json.loads(json_str)
             
-            
+            session = self.db.get_latest_session_by_path(path)
+
+            self.db.add_message(session_id=session.id, content=output.get('content'))
+
             return {
                 "success": True,
                 "message": "Tools executed successfully",
-                "result": result
+                "result": output
             }
             
         except Exception as e:

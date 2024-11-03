@@ -3,7 +3,10 @@ from pathlib import Path
 import pdb
 from typing import List, Dict, Any
 from jarvis.codegen.prompts import get_code_gen_agent_prompt
-from jarvis.codegen.service import read_file, write_file
+from jarvis.codegen.service import (
+    modify_code_section,
+    read_code_file,
+)
 from jarvis.codegen.types import ToolResult, ToolType
 from jarvis.helper.base_controller import BaseController
 from jarvis.helper.cmd_prompt import run_command
@@ -26,13 +29,13 @@ class CodeGenToolManager:
     def __init__(self):
         self.tools: Dict[str, BaseTool] = {
             ToolType.COMMAND_PROMPT.value: run_command,
-            ToolType.FILE_WRITER.value: write_file,
-            ToolType.FILE_READER.value: read_file,
+            ToolType.FILE_MODIFIER.value: modify_code_section,
+            ToolType.FILE_READER.value: read_code_file,
         }
 
         self.tool_descriptions = {
             ToolType.COMMAND_PROMPT.value: "Execute commands in the command prompt",
-            ToolType.FILE_WRITER.value: "Write code or content to files",
+            ToolType.FILE_MODIFIER.value: "Modife a section of code in a file",
             ToolType.FILE_READER.value: "Read the content of the file",
         }
 

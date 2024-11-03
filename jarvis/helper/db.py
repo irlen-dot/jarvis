@@ -31,6 +31,7 @@ class Session(Base):
     path = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     messages = relationship("Message", back_populates="session", cascade="all, delete-orphan")
+    type=Column(String, nullable=True)
 
 class Message(Base):
     __tablename__ = 'messages'

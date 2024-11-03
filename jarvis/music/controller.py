@@ -54,7 +54,6 @@ class MusicController(BaseController):
         super().__init__(
             llm_selector_class=MusicModelSelector,
             prompt_text=get_music_agent_prompt(tools),
-            agent=None,
         )
         self.db = Database()
 

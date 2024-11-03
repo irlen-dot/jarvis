@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import pdb
 from typing import List, Dict, Any
 from jarvis.codegen.prompts import get_code_gen_agent_prompt
 from jarvis.codegen.service import read_file, write_file
@@ -9,9 +10,14 @@ from jarvis.helper.cmd_prompt import run_command
 from jarvis.helper.db import Database, Session
 from jarvis.helper.models.coding_model import CodingModelSelector
 from langchain_core.tools import BaseTool
-from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain.agents import (
+    AgentExecutor,
+    create_tool_calling_agent,
+    create_react_agent,
+)
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools import tool
+from langchain import hub
 
 
 class CodeGenToolManager:
@@ -46,27 +52,27 @@ class CodeGenController(BaseController):
     """Controller for code generation and tool execution"""
 
     def __init__(self):
+        print("CodeGenController started to init...")
         self.tool_manager = CodeGenToolManager()
-        tools = self.tool_manager.get_tool_descriptions()
+        tools_description = (
+            self.tool_manager.get_tool_descriptions()
+        )  # Changed variable name for clarity
+
+        # Only pass the expected arguments to super().__init__()
         super().__init__(
             llm_selector_class=CodingModelSelector,
-            prompt_text=get_code_gen_agent_prompt(tools),
-            agent=create_tool_calling_agent(
-                llm=self.llm,
-                prompt=base_prompt,
-                tools=self.tool_manager.get_available_tools(),
-            ),
+            prompt_text=get_code_gen_agent_prompt(tools_description),
         )
+
         self.db = Database()
 
-        # Create base prompt
-        base_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", self.prompt_text),
-                MessagesPlaceholder(variable_name="chat_history"),
-                ("human", "{input}"),
-                MessagesPlaceholder(variable_name="agent_scratchpad"),
-            ]
+        prompt = hub.pull("hwchase17/react")
+
+        # Pass the actual tool objects, not the description string
+        self.agent = create_react_agent(
+            llm=self.llm,
+            prompt=prompt,
+            tools=self.tool_manager.get_available_tools(),  # Use the actual tools list
         )
 
         # Create agent executor
@@ -76,6 +82,7 @@ class CodeGenController(BaseController):
             verbose=True,
             handle_parsing_errors=True,
         )
+        print("CodeGenController inited...")
 
     async def manage_input(self, input: str, path: str) -> Dict[str, Any]:
         """Process user input and execute appropriate tools"""
@@ -85,6 +92,7 @@ class CodeGenController(BaseController):
         input = input + f"\n\n The current path of the directory is: {path}"
 
         try:
+            print("Starting to invoke the reAct agent...")
             # Execute agent with input
             result = await self.agent_executor.ainvoke(
                 {
@@ -92,7 +100,7 @@ class CodeGenController(BaseController):
                     "chat_history": [],  # Can be extended to maintain chat history
                 }
             )
-
+            print("Invoked the reAct agent")
             output: str = result["output"]
             json_str = output.split("}")[0] + "}"
             output: Dict[str, Any] = json.loads(json_str)

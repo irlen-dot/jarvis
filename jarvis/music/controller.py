@@ -62,7 +62,6 @@ class MusicController(BaseController):
         base_prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", self.prompt_text),
-                MessagesPlaceholder(variable_name="chat_history"),
                 ("human", "{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
@@ -83,7 +82,7 @@ class MusicController(BaseController):
             handle_parsing_errors=True,
         )
 
-    async def manage_input(self, input: str) -> Dict[str, Any]:
+    def manage_input(self, input: str) -> Dict[str, Any]:
         """
         Process user input and execute appropriate music tools.
         Returns the direct result/path from the tool execution.

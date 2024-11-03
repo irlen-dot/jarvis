@@ -9,10 +9,11 @@ from langchain_core.runnables import RunnableLambda
 from langchain.schema.output_parser import StrOutputParser
 
 
-
 class MainController(BaseController):
     def __init__(self):
-        super().__init__(InternalModelSelector, """
+        super().__init__(
+            InternalModelSelector,
+            """
         The input is related to:
         'create a project template',
         'download music',
@@ -27,27 +28,30 @@ class MainController(BaseController):
         Input - 'Turn on lo/fi' Output - 'music'
 
         The input is: {input}
-        """)
+        """,
+        )
         self.project_temp_controller = ProjectTempController()
         self.music_controller = MusicController()
 
-
-    def manage_input(self, input, current_path = None):
+    def manage_input(self, input, current_path=None):
         self.current_path = current_path
         prompt = PromptTemplate.from_template(self.prompt_text)
         chain = (
-            prompt | self.llm | StrOutputParser() | RunnableLambda(lambda x: self._manage_output(x, input))
+            prompt
+            | self.llm
+            | StrOutputParser()
+            | RunnableLambda(lambda x: self._manage_output(x, input))
         )
         print("Filtering by project_temp, load_music, turn_music....")
-        chain.invoke({ 'input': input })
-
+        chain.invoke({"input": input})
 
     def _manage_output(self, content: str, input: str):
         print(f"The output of filtering: {content}")
-        if 'coding' in content:
+        if "coding" in content:
             self.project_temp_controller.manage_input(input, self.current_path)
-        elif 'music' in content:
-            self.music_controller.manage_input(input, self.current_path)
+        elif "music" in content:
+            self.music_controller.manage_input(input)
         else:
-            raise ValueError('The question could not be determined neither as "contents" neither as "coding"')
-        
+            raise ValueError(
+                'The question could not be determined neither as "contents" neither as "coding"'
+            )

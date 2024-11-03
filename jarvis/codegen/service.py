@@ -1,62 +1,100 @@
 from pathlib import Path
-import pdb
-from typing import Union, Optional
+from typing import Any, Union, Optional, Dict
 from langchain.tools import tool
+import json
+
+from jarvis.helper.string_to_dict import string_to_dict
+
+
+def chunk_content(content: str, chunk_size: int = 8000) -> list[str]:
+    """Split content into manageable chunks."""
+    return [content[i : i + chunk_size] for i in range(0, len(content), chunk_size)]
 
 
 @tool
-def write_file(
-    content: str, file_path: Union[str, Path], create_dirs: Optional[bool] = True
-) -> bool:
+def write_file(input) -> Dict[str, Any]:
     """
-    Write content to a file at the specified path.
+    Write content to a file at the specified path with support for large files.
 
     Args:
-        content: Content to write to the file
-        file_path: Path where the file should be created
-        create_dirs: If True, create parent directories if they don't exist
-
+        input: {
+            content: Content to write to the file,
+            file_path: Path where the file should be created,
+            mode: Optional write mode ('w' for write, 'a' for append)
+        }
     Returns:
-        bool: True if write was successful, False otherwise
+        dict: Status of the operation including success flag and message
     """
     try:
-        print(f"Content: {content}")
-        print(f"File path: {file_path}")
-        print(f"Create Dirs{create_dirs}")
-        # Convert string path to Path object
+        output = string_to_dict(input) if isinstance(input, str) else input
+        content = output.get("content", "")
+        file_path = output.get("file_path")
+        mode = output.get("mode", "w")
+
+        if not content or not file_path:
+            return {
+                "success": False,
+                "message": "Both content and file_path are required",
+            }
+
         path = Path(file_path)
 
-        # Create parent directories if needed
-        if create_dirs:
-            path.parent.mkdir(parents=True, exist_ok=True)
+        # Handle large content by writing in chunks
+        if len(content) > 8000:  # Adjust threshold as needed
+            chunks = chunk_content(content)
 
-        # Write the content
-        path.write_text(content, encoding="utf-8")
+            # Write first chunk with 'w' mode to create/overwrite file
+            path.write_text(chunks[0], encoding="utf-8")
 
-        return True
+            # Append remaining chunks
+            with open(path, "a", encoding="utf-8") as f:
+                for chunk in chunks[1:]:
+                    f.write(chunk)
+        else:
+            # For smaller content, write directly
+            path.write_text(content, encoding="utf-8")
+
+        return {
+            "success": True,
+            "message": f"Successfully wrote content to {file_path}",
+            "bytes_written": path.stat().st_size,
+        }
 
     except Exception as e:
-        print(f"Error writing file: {str(e)}")
-        return False
+        return {"success": False, "message": f"Error writing file: {str(e)}"}
 
 
 @tool
-def read_file(file_path):
+def read_file(file_path: str) -> Dict[str, Any]:
     """
-    Read content from a file at the specified path.
+    Read content from a file at the specified path with improved error handling.
 
     Args:
         file_path: Path of the file to read
 
     Returns:
-        str: Content of the file if successful
-        str: Error message if reading fails
+        dict: Contains success flag, message, and content if successful
     """
     try:
-        with open(file_path, "r") as file:
-            content = file.read()
-            return content
-    except FileNotFoundError:
-        return "Error: File not found"
+        path = Path(file_path)
+        if not path.exists():
+            return {
+                "success": False,
+                "message": f"File not found: {file_path}",
+                "content": None,
+            }
+
+        content = path.read_text(encoding="utf-8")
+        return {
+            "success": True,
+            "message": "File read successfully",
+            "content": content,
+            "bytes_read": path.stat().st_size,
+        }
+
     except Exception as e:
-        return f"Error: {str(e)}"
+        return {
+            "success": False,
+            "message": f"Error reading file: {str(e)}",
+            "content": None,
+        }

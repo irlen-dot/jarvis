@@ -18,11 +18,11 @@ class MainController(BaseController):
         'download music',
         'turn on music'.
 
-        the output should be: 'create_project' or 'music'
+        the output should be: 'coding' or 'music'
 
         examples:
-        Input - 'flutter project named my_project' Output - 'create_project',
-        Input - 'python Hello_World and push to git' - 'create_project',
+        Input - 'flutter project named my_project' Output - 'coding',
+        Input - 'python Hello_World and push to git' - 'coding',
         Input - 'https://www.youtube.com/watch?v=YG3EhWlBaoI into folder rap' Output - 'music',
         Input - 'Turn on lo/fi' Output - 'music'
 
@@ -44,7 +44,7 @@ class MainController(BaseController):
 
     def _manage_output(self, content: str, input: str):
         print(f"The output of filtering: {content}")
-        if 'create_project' in content:
+        if 'coding' in content:
             self.project_temp_controller.manage_input(input, self.current_path)
         elif 'music' in content:
             self.music_controller.manage_input(input, self.current_path)

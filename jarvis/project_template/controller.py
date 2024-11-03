@@ -7,6 +7,7 @@ from jarvis.helper.models.coding_model import CodingModelSelector
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 import pdb
+from jarvis.helper.string_to_dict import string_to_dict
 from jarvis.project_template.prompt import project_templ_controller_prompt
 from jarvis.python.service import create_python_project
 from jarvis.unity.service import create_unity_project
@@ -31,18 +32,22 @@ class ProjectTempController(BaseController):
         self.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
         self.db = Database()
 
-   # Question to Claude: If I have a chat history, how can I refresh the history with new messages? And is it even nessecary
-
-
-    # TODO move the session db logic to here.
     def manage_input(self, input: str, current_path) -> Dict[str, Any]:
-        invoke_query = {"input": input }
+        invoke_query = {"input": input}
         if current_path:
-            invoke_query["current_path"] = current_path        
-        
+            invoke_query["current_path"] = current_path
+
+        # Parse output from string to Dictionary
         result = self.agent_executor.invoke(invoke_query)
-        json_str = result['output'].split('}')[0] + '}'
-        output: Dict[str, Any] = json.loads(json_str)
-        self.db.add_message(session_id=output.get('session_id'), content=output.get('content'), role=Role.AI)
+
+        output = string_to_dict(result["output"])
+
+        # Store the Human input and AI output into a session,
+        # related to this specific project
+        session = self.db.create_session(path=output.get("path_to_project"))
+        self.db.add_message(session_id=session.id, content=input, role=Role.HUMAN)
+        self.db.add_message(
+            session_id=session.id, content=output.get("content"), role=Role.AI
+        )
 
         return output

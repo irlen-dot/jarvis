@@ -1826,6 +1826,28 @@ files = [
 cli = ["click (>=5.0)"]
 
 [[package]]
+name = "pytube"
+version = "15.0.0"
+description = "Python 3 library for downloading YouTube Videos."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pytube-15.0.0-py3-none-any.whl", hash = "sha256:07b9904749e213485780d7eb606e5e5b8e4341aa4dccf699160876da00e12d78"},
+    {file = "pytube-15.0.0.tar.gz", hash = "sha256:076052efe76f390dfa24b1194ff821d4e86c17d41cb5562f3a276a8bcbfc9d1d"},
+]
+
+[[package]]
+name = "pytubefix"
+version = "8.2.0"
+description = "Python3 library for downloading YouTube Videos."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pytubefix-8.2.0-py3-none-any.whl", hash = "sha256:df0fd990a25ef130738c18cdf3756ce8699b69a74e52db8c18acd2ba2225f706"},
+    {file = "pytubefix-8.2.0.tar.gz", hash = "sha256:52d72f630169da3dc9db52e960a6b948d0bdae4387a93c8314c5c1a311f6c735"},
+]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.2"
 description = "YAML parser and emitter for Python"
@@ -2484,4 +2506,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "4623ef1c9c3c041ad8e22e7f27a6accb946c0e1e7b678fab8d07770edbdbf7ea"
+content-hash = "1361da1b311abe0b27eb4a2f577a07bc7f779a10676813e4ea167f280c6c35c7"

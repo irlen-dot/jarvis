@@ -16,6 +16,8 @@ psycopg2 = "^2.9.10"
 prisma = "^0.15.0"
 sqlalchemy = "^2.0.36"
 psycopg2-binary = "^2.9.10"
+pytube = "^15.0.0"
+pytubefix = "^8.2.0"
 
 
 [tool.poetry.group.dev.dependencies]

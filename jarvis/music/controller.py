@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 from typing import List, Dict, Any
 from enum import Enum
@@ -7,13 +6,16 @@ from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools import tool
 from jarvis.helper.base_controller import BaseController
-from jarvis.helper.db import Database
+from jarvis.helper.db import Database, Role
 from jarvis.helper.models.music_model import MusicModelSelector
+from jarvis.helper.string_to_dict import string_to_dict
+from jarvis.music.prompts import get_music_agent_prompt
 from jarvis.music.service import youtube_to_mp3
 
 
 class ToolType(Enum):
     """Types of music tools available"""
+
     YOUTUBE_TO_MP3 = "youtube_to_mp3"
     PLAYLIST_MANAGER = "playlist_manager"
     MUSIC_INFO = "music_info"
@@ -43,23 +45,6 @@ class MusicToolManager:
         )
 
 
-def get_music_agent_prompt(tools: str) -> str:
-    """Returns the prompt for the music agent"""
-    return f"""You are a music management assistant that helps users with various music-related tasks.
-    
-Available tools:
-{tools}
-
-For each request:
-1. Understand what the user wants to do with their music
-2. Choose the appropriate tool(s) for the task
-3. Execute the tools in the correct order
-4. Return the direct path or result from the tool execution
-
-Always ensure proper error handling and validation of inputs.
-"""
-
-
 class MusicController(BaseController):
     """Controller for music operations and tool execution"""
 
@@ -69,7 +54,7 @@ class MusicController(BaseController):
         super().__init__(
             llm_selector_class=MusicModelSelector,
             prompt_text=get_music_agent_prompt(tools),
-            agent=None
+            agent=None,
         )
         self.db = Database()
 
@@ -98,24 +83,27 @@ class MusicController(BaseController):
             handle_parsing_errors=True,
         )
 
-    async def manage_input(self, input: str) -> str:
+    async def manage_input(self, input: str) -> Dict[str, Any]:
         """
         Process user input and execute appropriate music tools.
         Returns the direct result/path from the tool execution.
         """
 
         try:
-            result = await self.agent_executor.ainvoke(
+            result = self.agent_executor.invoke(
                 {
                     "input": input,
-                    "chat_history": [],
                 }
             )
 
-            session = self.db.get_latest_session_by_path(path)
-            self.db.add_message(session_id=session.id, content=result["output"])
+            output = string_to_dict(result["output"])
+            session = self.db.create_session(path=output.get("path"))
+            self.db.add_message(session_id=session.id, content=input, role=Role.HUMAN)
+            self.db.add_message(
+                session_id=session.id, content=output.get("content"), role=Role.AI
+            )
 
-            return result["output"]  # Direct output from the tool
+            return output  # Direct output from the tool
 
         except Exception as e:
             raise Exception(f"Error performing music operation: {str(e)}")

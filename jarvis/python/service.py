@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Optional
 from langchain_core.tools import tool
 from jarvis.helper.cmd_prompt import run_command
-from jarvis.helper.db import Database, Role
 
 @dataclass
 class ProjectSettings:
@@ -94,13 +93,11 @@ class PythonProjectManager:
     
     def __init__(self):
         PoetryEnvironment.verify_installation()
-        self.db = Database()
         
     def create_project(self, settings: ProjectSettings) -> Path:
         """Create and configure a new Python project"""
         project_path = settings.full_path
         original_dir = Path.cwd()
-        session = self.db.create_session(str(project_path))
         try:
             # Create and setup project
             PoetryEnvironment.create_project(project_path)
@@ -118,9 +115,8 @@ class PythonProjectManager:
             # TODO Decomment
             # run_command(f"code {str(project_path)}")
             
-            self.db.add_message(session_id=session.id, content=f"create a python project in path {settings.full_path}", role=Role.HUMAN)
 
-            return project_path, session.id
+            return project_path
             
         finally:
             os.chdir(original_dir)

@@ -75,12 +75,12 @@ class Database:
         session_local = self.SessionLocal()
         return session_local
 
-    def create_session(self, path: str):
+    def create_session(self, path: str, type: str):
         """Create a new coding session"""
         db_session = self.SessionLocal()
-    
+
         try:
-            new_session = Session(path=path)
+            new_session = Session(path=path, type=type)
             db_session.add(new_session)
             db_session.commit()
             db_session.refresh(new_session)

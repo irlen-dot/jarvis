@@ -5,6 +5,7 @@ from langchain_core.tools import BaseTool
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools import tool
+from jarvis.helper.agent_output_parser import process_agent_output
 from jarvis.helper.base_controller import BaseController
 from jarvis.helper.db import Database, Role
 from jarvis.helper.models.music_model import MusicModelSelector
@@ -94,7 +95,7 @@ class MusicController(BaseController):
                 }
             )
 
-            output = string_to_dict(result["output"])
+            output = process_agent_output(result["output"])
             session = self.db.create_session(path=output.get("path"))
             self.db.add_message(session_id=session.id, content=input, role=Role.HUMAN)
             self.db.add_message(

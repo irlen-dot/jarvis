@@ -1,6 +1,7 @@
 import json
 from typing import Any, Dict
 from jarvis.git.service import create_and_push_repo
+from jarvis.helper.agent_output_parser import process_agent_output
 from jarvis.helper.base_controller import BaseController
 from jarvis.helper.db import Database, Role
 from jarvis.helper.models.coding_model import CodingModelSelector
@@ -39,8 +40,8 @@ class ProjectTempController(BaseController):
 
         # Parse output from string to Dictionary
         result = self.agent_executor.invoke(invoke_query)
-
-        output = string_to_dict(result["output"])
+        print(f"The output of the AI is {result}")
+        output = process_agent_output(result["output"])
 
         # Store the Human input and AI output into a session,
         # related to this specific project

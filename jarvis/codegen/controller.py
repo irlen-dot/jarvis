@@ -51,13 +51,7 @@ class CodeGenController(BaseController):
         super().__init__(
             llm_selector_class=CodingModelSelector,
             prompt_text=get_code_gen_agent_prompt(tools),
-            agent=create_tool_calling_agent(
-                llm=self.llm,
-                prompt=base_prompt,
-                tools=self.tool_manager.get_available_tools(),
-            ),
         )
-        self.db = Database()
 
         # Create base prompt
         base_prompt = ChatPromptTemplate.from_messages(
@@ -68,6 +62,14 @@ class CodeGenController(BaseController):
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
         )
+
+        self.agent = create_tool_calling_agent(
+            llm=self.llm,
+            prompt=base_prompt,
+            tools=self.tool_manager.get_available_tools(),
+        )
+
+        self.db = Database()
 
         # Create agent executor
         self.agent_executor = AgentExecutor(

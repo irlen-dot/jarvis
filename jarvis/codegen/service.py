@@ -1,10 +1,62 @@
 from pathlib import Path
-from typing import Union, Optional
+from typing import Union, Optional, List
 from langchain.tools import tool
 
 
 @tool
-def write_file(
+def overwrite_lines(
+    content: str,
+    file_path: Union[str, Path],
+    start_line: int,
+    end_line: int,
+    create_dirs: Optional[bool] = True,
+) -> bool:
+    """
+    Overwrite lines in a file between start_line and end_line (inclusive) with new content.
+    If line numbers exceed file length, file will be extended with empty lines.
+
+    Args:
+        content: Content to write
+        file_path: Path of the file
+        start_line: First line to overwrite (1-based indexing)
+        end_line: Last line to overwrite (1-based indexing)
+        create_dirs: If True, create parent directories if they don't exist
+
+    Returns:
+        bool: True if overwrite was successful, False otherwise
+    """
+    try:
+        print("Invoking overwrite_lines...")
+        path = Path(file_path)
+        if create_dirs:
+            path.parent.mkdir(parents=True, exist_ok=True)
+
+        if not path.exists():
+            path.touch()
+
+        with open(path, "r", encoding="utf-8") as file:
+            lines = file.readlines()
+
+        # Split content into lines
+        content_lines = content.splitlines(keepends=True)
+
+        while len(lines) < end_line:
+            lines.append("\n")
+
+        # Replace the specified range with new content lines
+        lines[start_line - 1 : end_line] = content_lines
+
+        with open(path, "w", encoding="utf-8") as file:
+            file.writelines(lines)
+        print("Invoked overwrite_lines.")
+        return True
+    except Exception as e:
+        print(f"Error overwriting lines: {str(e)}")
+        return False
+
+
+@tool
+def overwrite_file(
     content: str, file_path: Union[str, Path], create_dirs: Optional[bool] = True
 ) -> bool:
     """
@@ -20,18 +72,11 @@ def write_file(
         bool: True if write was successful, False otherwise
     """
     try:
-        # Convert string path to Path object
         path = Path(file_path)
-
-        # Create parent directories if needed
         if create_dirs:
             path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Write the content
         path.write_text(content, encoding="utf-8")
-
         return True
-
     except Exception as e:
         print(f"Error writing file: {str(e)}")
         return False
@@ -54,24 +99,18 @@ def append_file(
     """
     try:
         path = Path(file_path)
-
-        # Create parent directories if needed
         if create_dirs:
             path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Append the content (creates file if it doesn't exist)
         with open(path, "a", encoding="utf-8") as file:
             file.write(content)
-
         return True
-
     except Exception as e:
         print(f"Error appending to file: {str(e)}")
         return False
 
 
 @tool
-def insert_line_into_file(
+def insert_line(
     content: str,
     file_path: Union[str, Path],
     line_number: int,
@@ -93,41 +132,77 @@ def insert_line_into_file(
     """
     try:
         path = Path(file_path)
-
-        # Create parent directories if needed
         if create_dirs:
             path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Create file if it doesn't exist
         if not path.exists():
             path.touch()
 
-        # Read existing lines
         with open(path, "r", encoding="utf-8") as file:
             lines = file.readlines()
 
-        # Ensure content ends with a newline if it doesn't already
         if not content.endswith("\n"):
             content += "\n"
 
-        # Handle line number beyond file length
         if line_number > len(lines) + 1:
             line_number = len(lines) + 1
 
-        # Insert the content at the specified line
         if line_number <= 1:
             lines.insert(0, content)
         else:
             lines.insert(line_number - 1, content)
 
-        # Write the modified content back to the file
         with open(path, "w", encoding="utf-8") as file:
             file.writelines(lines)
 
         return True
-
     except Exception as e:
         print(f"Error inserting line: {str(e)}")
+        return False
+
+
+@tool
+def delete_lines(
+    file_path: Union[str, Path], line_numbers: Union[int, List[int], range]
+) -> bool:
+    """
+    Delete specific lines from a file. Line numbers start at 1.
+
+    Args:
+        file_path: Path of the file
+        line_numbers: Single line number, list of line numbers, or range of lines to delete
+
+    Returns:
+        bool: True if deletion was successful, False otherwise
+    """
+    try:
+        path = Path(file_path)
+        if not path.exists():
+            print("Error: File not found")
+            return False
+
+        # Convert single line number to list
+        if isinstance(line_numbers, int):
+            line_numbers = [line_numbers]
+        elif isinstance(line_numbers, range):
+            line_numbers = list(line_numbers)
+
+        # Convert to 0-based indexing and sort in reverse
+        line_indices = sorted([i - 1 for i in line_numbers], reverse=True)
+
+        with open(path, "r", encoding="utf-8") as file:
+            lines = file.readlines()
+
+        # Remove lines from the end to avoid index shifting
+        for index in line_indices:
+            if 0 <= index < len(lines):
+                lines.pop(index)
+
+        with open(path, "w", encoding="utf-8") as file:
+            file.writelines(lines)
+
+        return True
+    except Exception as e:
+        print(f"Error deleting lines: {str(e)}")
         return False
 
 
@@ -146,7 +221,6 @@ def read_file(file_path):
     try:
         with open(file_path, "r") as file:
             lines = file.readlines()
-            # Add line numbers to each line
             numbered_lines = [
                 f"Line[{i+1}] {line.rstrip()}" for i, line in enumerate(lines)
             ]

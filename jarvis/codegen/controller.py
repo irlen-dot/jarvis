@@ -5,8 +5,9 @@ from jarvis.codegen.prompts import get_code_gen_agent_prompt
 from jarvis.codegen.service import (
     append_file,
     read_file,
-    write_file,
-    insert_line_into_file,
+    overwrite_file,
+    insert_line,
+    overwrite_lines,
 )
 from jarvis.codegen.types import ToolResult, ToolType
 from jarvis.helper.base_controller import BaseController
@@ -25,17 +26,19 @@ class CodeGenToolManager:
     def __init__(self):
         self.tools: Dict[str, BaseTool] = {
             ToolType.COMMAND_PROMPT.value: run_command,
-            ToolType.FILE_WRITER.value: write_file,
+            ToolType.FILE_OVERWRITER.value: overwrite_file,
+            ToolType.LINES_OVERWRITER.value: overwrite_lines,
             ToolType.FILE_READER.value: read_file,
             ToolType.FILE_APPENDER.value: append_file,
-            ToolType.FILE_INSERT_LINE.value: insert_line_into_file,
+            ToolType.FILE_INSERT_LINE.value: insert_line,
         }
 
         self.tool_descriptions = {
             ToolType.COMMAND_PROMPT.value: "Execute commands in the command prompt",
-            ToolType.FILE_WRITER.value: "Write code or content to files. It edits the whole file.",
+            ToolType.FILE_OVERWRITER.value: "It overwrites the whole file.",
             ToolType.FILE_READER.value: "Read the content of the file",
             ToolType.FILE_APPENDER.value: "Write code or content to files. It adds content to the end of the file.",
+            ToolType.LINES_OVERWRITER.value: "It overwrites specific lines.",
             ToolType.FILE_INSERT_LINE.value: "Write code or content to files. It adds content at a specific line.",
         }
 

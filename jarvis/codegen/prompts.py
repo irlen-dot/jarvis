@@ -1,11 +1,12 @@
 def get_code_gen_agent_prompt(tools: str):
 
-
     return f"""You are an agent responsible for writing code. 
-            You ave these tools havailable:
+            You have these tools havailable:
             
             {tools}
             
+        
+
             Follow these guidelines:
             1. Analyze user requests carefully to determine required tools
             2. Execute tools in the correct order

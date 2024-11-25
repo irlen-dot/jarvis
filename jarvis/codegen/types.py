@@ -7,10 +7,14 @@ class ToolType(Enum):
     COMMAND_PROMPT = "command_prompt"
     FILE_WRITER = "file_writer"
     FILE_READER = "file_reader"
+    FILE_APPENDER = "file_appender"
+    FILE_INSERT_LINE = "file_insert_line"
+
 
 @dataclass
 class ToolResult:
     """Container for tool execution results"""
+
     success: bool
     message: str
     data: Optional[Any] = None

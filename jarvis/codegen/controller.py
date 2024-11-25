@@ -2,7 +2,12 @@ import json
 from pathlib import Path
 from typing import List, Dict, Any
 from jarvis.codegen.prompts import get_code_gen_agent_prompt
-from jarvis.codegen.service import read_file, write_file
+from jarvis.codegen.service import (
+    append_file,
+    read_file,
+    write_file,
+    insert_line_into_file,
+)
 from jarvis.codegen.types import ToolResult, ToolType
 from jarvis.helper.base_controller import BaseController
 from jarvis.helper.cmd_prompt import run_command
@@ -22,12 +27,16 @@ class CodeGenToolManager:
             ToolType.COMMAND_PROMPT.value: run_command,
             ToolType.FILE_WRITER.value: write_file,
             ToolType.FILE_READER.value: read_file,
+            ToolType.FILE_APPENDER.value: append_file,
+            ToolType.FILE_INSERT_LINE.value: insert_line_into_file,
         }
 
         self.tool_descriptions = {
             ToolType.COMMAND_PROMPT.value: "Execute commands in the command prompt",
-            ToolType.FILE_WRITER.value: "Write code or content to files",
+            ToolType.FILE_WRITER.value: "Write code or content to files. It edits the whole file.",
             ToolType.FILE_READER.value: "Read the content of the file",
+            ToolType.FILE_APPENDER.value: "Write code or content to files. It adds content to the end of the file.",
+            ToolType.FILE_INSERT_LINE.value: "Write code or content to files. It adds content at a specific line.",
         }
 
     def get_available_tools(self) -> List[BaseTool]:

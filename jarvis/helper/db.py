@@ -1,4 +1,14 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, MetaData, desc
+from pathlib import Path
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    ForeignKey,
+    DateTime,
+    MetaData,
+    desc,
+)
 from sqlalchemy.orm import relationship, declarative_base, Session as SQLAlchemySession
 from sqlalchemy.sql import func
 from datetime import datetime
@@ -12,59 +22,74 @@ from sqlalchemy import Enum as SQLAlchemyEnum
 
 load_dotenv()
 
+
 # Define the Role enum
 class Role(str, Enum):
     AI = "AI"
     HUMAN = "Human"
 
+
 # Create SQLAlchemy engine and base
-engine = create_engine(os.getenv('DATABASE_URL'))
+engine = create_engine(os.getenv("DATABASE_URL"))
+
+
 class Base(DeclarativeBase):
     pass
 
+
 # Base = declarative_base()
 
+
 class Session(Base):
-    __tablename__ = 'sessions'
-    
+    __tablename__ = "sessions"
+
     id = Column(Integer, primary_key=True)
     path = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    messages = relationship("Message", back_populates="session", cascade="all, delete-orphan")
-    type=Column(String, nullable=True)
+    messages = relationship(
+        "Message", back_populates="session", cascade="all, delete-orphan"
+    )
+    type = Column(String, nullable=True)
+
 
 class Message(Base):
-    __tablename__ = 'messages'
-    
+    __tablename__ = "messages"
+
     id = Column(Integer, primary_key=True)
-    session_id = Column(Integer, ForeignKey('sessions.id'), nullable=False)
+    session_id = Column(Integer, ForeignKey("sessions.id"), nullable=False)
     content = Column(String, nullable=False)
-    role = Column(SQLAlchemyEnum(Role, name='role_enum'), nullable=False)  # Using Enum type
+    role = Column(
+        SQLAlchemyEnum(Role, name="role_enum"), nullable=False
+    )  # Using Enum type
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
+
     session = relationship("Session", back_populates="messages")
+
 
 # Create all tables
 Base.metadata.create_all(engine)
 
+
 class Database:
     def __init__(self):
         """Initialize database connection using environment variables"""
-        DB_USER = os.getenv('DB_USER', 'postgres')
-        DB_PASSWORD = os.getenv('DB_PASSWORD', '8556')
-        DB_HOST = os.getenv('DB_HOST', 'localhost')
-        DB_PORT = os.getenv('DB_PORT', '5432')
-        DB_NAME = os.getenv('DB_NAME', 'jarvis')
+        DB_USER = os.getenv("DB_USER", "postgres")
+        DB_PASSWORD = os.getenv("DB_PASSWORD", "8556")
+        DB_HOST = os.getenv("DB_HOST", "localhost")
+        DB_PORT = os.getenv("DB_PORT", "5432")
+        DB_NAME = os.getenv("DB_NAME", "jarvis")
 
         # Create connection URL
-        DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-        
+        DATABASE_URL = (
+            f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        )
+
         # Create engine
         self.engine = create_engine(DATABASE_URL)
-        
+
         # Create all tables
         Base.metadata.create_all(self.engine)
-        
+
         # Create session factory
         self.SessionLocal = sessionmaker(bind=self.engine)
         scoped_session(self.SessionLocal)
@@ -77,10 +102,12 @@ class Database:
 
     def create_session(self, path: str):
         """Create a new coding session"""
+        print("Creating new session...")
         db_session = self.SessionLocal()
-    
+        parsed_path = self._replace_path_slashes(path)
+        print(f"The path parsed is {parsed_path}")
         try:
-            new_session = Session(path=path)
+            new_session = Session(path=parsed_path)
             db_session.add(new_session)
             db_session.commit()
             db_session.refresh(new_session)
@@ -88,28 +115,30 @@ class Database:
         finally:
             db_session.close()
 
-    def find_session_by_path(self, path_to_find: str) -> Session:
-        # Convert backslashes to forward slashes
-        path_str = str(path_to_find)
-        path_parsed = path_str.replace('\\', '/')  # Use single backslash
-        like_pattern = f"%{path_parsed}%"
-        
-        print("Original path:", path_str)
-        print("Parsed path:", path_parsed)
-        print("Like pattern:", like_pattern)
-        
-        # It is just a connection to the Session table
-        db = self.session
+    def get_messages_by_sessions_path(self, path_to_find: str):
+        path = self._replace_path_slashes(path_to_find)
+        session = self.find_session_by_path(path)
+        messages = self.get_messages(session.id)
+        return messages
 
-        try:
-            query = db.query(Session)\
-                .filter(Session.path.like(like_pattern))\
-                .order_by(Session.created_at.desc())
-            
-            result = query.first()
-            return result
-        finally:
-            db.close()
+    def find_session_by_path(self, path_to_find: str) -> Session:
+        path_obj = Path(path_to_find)
+        while path_obj != path_obj.parent:
+            parsed_path = self._replace_path_slashes(str(path_obj))
+            db = self.session
+            try:
+                query = (
+                    db.query(Session)
+                    .filter(Session.path == parsed_path)
+                    .order_by(Session.created_at.desc())
+                )
+                result = query.first()
+                if result:
+                    return result
+                path_obj = path_obj.parent
+            finally:
+                db.close()
+        return None
 
     def get_latest_session(self) -> Session:
         session = self.session.query(Session).first()
@@ -125,13 +154,12 @@ class Database:
 
     def add_message(self, session_id: int, content: str, role: Role):
         """Add a message to a session"""
+        print("Start Start")
         db_session = self.SessionLocal()
+        print("End end")
         try:
-            new_message = Message(
-                session_id=session_id,
-                content=content,
-                role=role
-            )
+            new_message = Message(session_id=session_id, content=content, role=role)
+            print(f"The new message: {new_message}")
             db_session.add(new_message)
             db_session.commit()
             db_session.refresh(new_message)
@@ -145,8 +173,8 @@ class Database:
         try:
             return (
                 db_session.query(Message)
-                .filter(Message.sessionId == session_id)
-                .order_by(Message.timestamp)
+                .filter(Message.session_id == session_id)
+                .order_by(Message.created_at)
                 .all()
             )
         finally:
@@ -154,13 +182,21 @@ class Database:
 
     def get_latest_session_by_path(self, path: str):
         """Get the latest session for a specific path"""
+        print(f"The path {path}")
+        parsed_path = self._replace_path_slashes(path)
+        # print(f"Parsed path: {parsed_path}")
         db_session = self.SessionLocal()
         try:
             return (
                 db_session.query(Session)
-                .filter(Session.path == path)
+                .filter(Session.path == parsed_path)
                 .order_by(Session.id.desc())
                 .first()
             )
         finally:
             db_session.close()
+
+    def _replace_path_slashes(self, path: str):
+        parsed_path = path.replace("\\", "/")
+        print(f"the parsed Parsed path: {parsed_path}")
+        return parsed_path

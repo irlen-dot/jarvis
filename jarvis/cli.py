@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional
 
 from jarvis.main_controller import MainController
+from jarvis.project_template.controller import ProjectTempController
 
 
 # Ensure project root is in Python path
@@ -28,6 +29,7 @@ class CodeGenCLI:
         self.original_working_dir = Path.cwd()
         self.code_controller = CodeGenController()
         self.main_controller = MainController()
+        self.project_controller = ProjectTempController()
 
     def create_parser(self) -> argparse.ArgumentParser:
         """Create and configure argument parser.
@@ -44,6 +46,12 @@ class CodeGenCLI:
             "--all",
             action="store_true",
             help="Show both current working directory and script location",
+        )
+
+        parser.add_argument(
+            "-i",
+            "--init-project",
+            help="Init a project in Jarvis DB, to mantain a chat history",
         )
 
         parser.add_argument(
@@ -74,14 +82,18 @@ class CodeGenCLI:
             Exit code (0 for success)
         """
         # pdb.set_trace()
+        print(args.init_project)
 
         if args.all:
             self.show_directory_info()
 
+        if args.init_project:
+            self.project_controller.init_project(str(self.original_working_dir))
+
         if args.writecode:
             print(f"Working directory: {self.original_working_dir}")
             await self.code_controller.manage_input(
-                args.writecode, str(self.original_working_dir)
+                args.writecode, self.original_working_dir
             )
 
         if args.prompt:

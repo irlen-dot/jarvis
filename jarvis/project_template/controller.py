@@ -6,7 +6,6 @@ from jarvis.helper.db import Database, Role
 from jarvis.helper.models.coding_model import CodingModelSelector
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.agents import AgentExecutor, create_tool_calling_agent
-import pdb
 from jarvis.helper.string_to_dict import string_to_dict
 from jarvis.project_template.prompt import project_templ_controller_prompt
 from jarvis.python.service import create_python_project
@@ -51,3 +50,9 @@ class ProjectTempController(BaseController):
         )
 
         return output
+
+    def init_project(self, path: str):
+        print("The project is initing...")
+        session = self.db.create_session(path)
+        print("The project is inited.")
+        return session

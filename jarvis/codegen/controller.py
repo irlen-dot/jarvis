@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import pdb
 from typing import List, Dict, Any
 from jarvis.codegen.prompts import get_code_gen_agent_prompt
 from jarvis.codegen.service import (
@@ -12,12 +13,13 @@ from jarvis.codegen.service import (
 from jarvis.codegen.types import ToolResult, ToolType
 from jarvis.helper.base_controller import BaseController
 from jarvis.helper.cmd_prompt import run_command
-from jarvis.helper.db import Database, Session
+from jarvis.helper.db import Database, Role, Session
 from jarvis.helper.models.coding_model import CodingModelSelector
 from langchain_core.tools import BaseTool
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools import tool
+from langchain_core.messages import AIMessage, HumanMessage
 
 
 class CodeGenToolManager:
@@ -91,29 +93,38 @@ class CodeGenController(BaseController):
             handle_parsing_errors=True,
         )
 
-    async def manage_input(self, input: str, path: str) -> Dict[str, Any]:
+    async def manage_input(self, input: str, path: Path) -> Dict[str, Any]:
         """Process user input and execute appropriate tools"""
+        messages = self.db.get_messages_by_sessions_path(str(path))
 
-        path = Path(path)
+        # Convert to LangChain message objects
+        formatted_messages = []
+        if messages is not None:
+            formatted_messages = [
+                (
+                    HumanMessage(content=msg.content)
+                    if msg.role == Role.HUMAN
+                    else AIMessage(content=msg.content)
+                )
+                for msg in messages
+            ]
 
-        input = input + f"\n\n The current path of the directory is: {path}"
+        agent_input = input + f"\n\n The current path of the directory is: {path}"
 
         try:
             # Execute agent with input
             result = await self.agent_executor.ainvoke(
                 {
-                    "input": input,
-                    "chat_history": [],  # Can be extended to maintain chat history
+                    "input": agent_input,
+                    "chat_history": formatted_messages,
                 }
             )
 
             output: str = result["output"]
-            json_str = output.split("}")[0] + "}"
-            output: Dict[str, Any] = json.loads(json_str)
+            session = self.db.find_session_by_path(path)
 
-            session = self.db.get_latest_session_by_path(path)
-
-            self.db.add_message(session_id=session.id, content=output.get("content"))
+            self.db.add_message(session_id=session.id, content=input, role=Role.HUMAN)
+            self.db.add_message(session_id=session.id, content=output, role=Role.AI)
 
             return {
                 "success": True,
@@ -122,6 +133,7 @@ class CodeGenController(BaseController):
             }
 
         except Exception as e:
+            print(f"Error executing agent: {str(e)}")  # Added for debugging
             return {
                 "success": False,
                 "message": f"Error executing tools: {str(e)}",

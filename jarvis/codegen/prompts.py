@@ -6,7 +6,6 @@ def get_code_gen_agent_prompt(tools: str):
             {tools}
             
 
-
             Follow these guidelines:
             1. Analyze user requests carefully to determine required tools
             2. Execute tools in the correct order

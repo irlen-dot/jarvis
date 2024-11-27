@@ -19,6 +19,7 @@ from langchain_core.tools import BaseTool
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools import tool
+from langchain_core.messages import AIMessage, HumanMessage
 
 
 class CodeGenToolManager:
@@ -94,40 +95,28 @@ class CodeGenController(BaseController):
 
     async def manage_input(self, input: str, path: Path) -> Dict[str, Any]:
         """Process user input and execute appropriate tools"""
-
-        # path = Path(path)
         messages = self.db.get_messages_by_sessions_path(str(path))
-        print(f"The session messages: {messages}")
 
-        formatted_messages = (
-            []
-            if messages is None
-            else [
-                {
-                    "role": "Human" if msg.role == Role.HUMAN else "AI",
-                    "content": msg.content,
-                }
+        # Convert to LangChain message objects
+        formatted_messages = []
+        if messages is not None:
+            formatted_messages = [
+                (
+                    HumanMessage(content=msg.content)
+                    if msg.role == Role.HUMAN
+                    else AIMessage(content=msg.content)
+                )
                 for msg in messages
             ]
-        )
-
-        print(f"The formatted messaged are: {formatted_messages}.")
 
         agent_input = input + f"\n\n The current path of the directory is: {path}"
 
         try:
             # Execute agent with input
-            # result = await self.agent_executor.ainvoke(
-            #     {
-            #         "input": agent_input,
-            #         "chat_history": formatted_messages,  # Can be extended to maintain chat history
-            #     }
-            # )
-
             result = await self.agent_executor.ainvoke(
                 {
                     "input": agent_input,
-                    # "chat_history": formatted_messages,  # Can be extended to maintain chat history
+                    "chat_history": formatted_messages,
                 }
             )
 
@@ -137,8 +126,6 @@ class CodeGenController(BaseController):
             self.db.add_message(session_id=session.id, content=input, role=Role.HUMAN)
             self.db.add_message(session_id=session.id, content=output, role=Role.AI)
 
-            print("Message added.")
-
             return {
                 "success": True,
                 "message": "Tools executed successfully",
@@ -146,6 +133,7 @@ class CodeGenController(BaseController):
             }
 
         except Exception as e:
+            print(f"Error executing agent: {str(e)}")  # Added for debugging
             return {
                 "success": False,
                 "message": f"Error executing tools: {str(e)}",

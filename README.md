@@ -2,9 +2,13 @@
 
 Created by the Almaty Guys. Fully open source. Created, so that I can optimize the process of finishing my university assignments.
 
-**IMPORTANT NOTE**: The project is still in the stage of development. High probability to move to the microservice architecture and use Rust to manage the everything in terms of the computer and python for the AI part.
+**IMPORTANT NOTES** (They are added as I develop Jarvis. Because I still do not understand, in which direction my project is heading): 
+- The project is still in the stage of development. High probability to move to the microservice architecture and use Rust to manage the everything in terms of the computer and python for the AI part.
+- It is only on windows for now
+- The code generation has separate methods of indexing file, due to the fact that different languages treat namings of classes and interfaces differently. But I will test it
+in other languages, because I kind of do not have metrics to prove it.
 
-**Another important note**: It is only on windows for now
+**The Code Gen** 
 
 Jarvis is a powerful chatbot that automates a variety of tasks on your computer, from creating new projects to managing files and even pushing them to GitHub. With Jarvis, you can simplify your workflow and boost productivity by delegating repetitive tasks to an intelligent assistant.
 
@@ -24,6 +28,11 @@ Jarvis is a powerful chatbot that automates a variety of tasks on your computer,
 - **GitHub Integration**: 
   - Pushes all projects to GitHub with minimal setup.
   - Can automate commit messages and handle multiple repositories.
+
+- **Code Generation**:
+  - Writes code into the file.
+  - Reads your code and analyze it.
+  - Debugs your code.
 
 ## Installation
 

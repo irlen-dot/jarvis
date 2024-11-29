@@ -40,5 +40,4 @@ class IndexCodeAgent(BaseController):
     def start_indexing(self, content: str) -> str:
         prompt = self.base_prompt.invoke({"code": content})
         output = self.model.invoke(prompt)
-        print(output.content)
         return output.content

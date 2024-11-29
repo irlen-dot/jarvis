@@ -6,6 +6,7 @@ import asyncio
 from pathlib import Path
 from typing import Optional
 
+from jarvis.index_project.controller import IndexController
 from jarvis.main_controller import MainController
 from jarvis.project_template.controller import ProjectTempController
 
@@ -30,6 +31,7 @@ class CodeGenCLI:
         self.code_controller = CodeGenController()
         self.main_controller = MainController()
         self.project_controller = ProjectTempController()
+        self.index_controller = IndexController()
 
     def create_parser(self) -> argparse.ArgumentParser:
         """Create and configure argument parser.
@@ -50,6 +52,11 @@ class CodeGenCLI:
 
         parser.add_argument(
             "-i",
+            "--index",
+            help="It indexes all folders and files of the project. So, you that you can have access to the code",
+        )
+
+        parser.add_argument(
             "--init-project",
             help="Init a project in Jarvis DB, to mantain a chat history",
         )
@@ -86,6 +93,9 @@ class CodeGenCLI:
 
         if args.all:
             self.show_directory_info()
+
+        if args.index:
+            self.index_controller.start_indexing(str(self.original_working_dir))
 
         if args.init_project:
             self.project_controller.init_project(str(self.original_working_dir))

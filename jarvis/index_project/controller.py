@@ -24,14 +24,15 @@ class IndexController:
             files = folders_files.get("files", [])
             for file in files:
                 file_name = file.get("name")
-                if not any(file_name.endswith(ext) for ext in self.EXCLUDED_EXTENSIONS):
+                if file_name.endswith(".cs"):
                     self.current_name = file_name
                     self.process_file(current_path)
 
             # Process subdirectories
             folders = folders_files.get("directories", [])
             for folder_name in folders:
-                # TODO remove them in the parsing part.
+
+                # TODO filter everything on the parsing stage.
                 if folder_name in [".", ".."]:
                     continue
 
@@ -45,6 +46,8 @@ class IndexController:
             os.path.join(current_path, self.current_name), self.base_path
         )
         file_analyzes = file_analyzes + f"\npath: {rel_path}"
+        print(file_analyzes)
+
         return file_analyzes
 
     def open_file(self) -> str:

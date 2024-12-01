@@ -1,7 +1,7 @@
 from pymilvus import connections, Collection, CollectionSchema, DataType, FieldSchema, utility
 from typing import List, Dict, Any, Tuple
 
-class MilvusClient:
+class VectorDB:
     def __init__(self, collection_name: str = "project_files", host: str = "localhost", port: str = "19530", dim: int = 1536):
         self.host = host
         self.port = port

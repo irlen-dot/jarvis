@@ -52,7 +52,7 @@ services:
       interval: 30s
       start_period: 90s
       timeout: 20s
-      re  tries: 3
+      retries: 3
     ports:
       - "19530:19530"
       - "9091:9091"

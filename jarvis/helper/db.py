@@ -40,6 +40,15 @@ class Base(DeclarativeBase):
 # Base = declarative_base()
 
 
+class ProjectCollection(Base):
+    __tablename__ = "project_collections"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    path = Column(String, nullable=False)
+
+
 class Session(Base):
     __tablename__ = "sessions"
 
@@ -50,6 +59,7 @@ class Session(Base):
         "Message", back_populates="session", cascade="all, delete-orphan"
     )
     type = Column(String, nullable=True)
+    collection = Column(String, nullable=False)
 
 
 class Message(Base):
@@ -99,6 +109,40 @@ class Database:
     def session(self):
         session_local = self.SessionLocal()
         return session_local
+
+    def create_project_collection(self, name: str, path: str):
+        db_session = self.SessionLocal()
+        try:
+            collection = ProjectCollection(name=name, path=path)
+            db_session.add(collection)
+            db_session.commit()
+            db_session.refresh(collection)
+            return collection
+        finally:
+            db_session.close()
+
+    def get_collection_by_path(self, path: str):
+        """Get a collection by path"""
+        db_session = self.SessionLocal()
+        try:
+            return (
+                db_session.query(ProjectCollection)
+                .filter(ProjectCollection.path == path)
+                .first()
+            )
+        finally:
+            db_session.close()
+
+    def get_project_collection(self, collection_id: int):
+        db_session = self.SessionLocal()
+        try:
+            return (
+                db_session.query(ProjectCollection)
+                .filter(ProjectCollection.id == collection_id)
+                .first()
+            )
+        finally:
+            db_session.close()
 
     def create_session(self, path: str):
         """Create a new coding session"""
@@ -193,6 +237,18 @@ class Database:
                 .order_by(Session.id.desc())
                 .first()
             )
+        finally:
+            db_session.close()
+
+    def update_collection(self, session_id: int, collection: str):
+        """Update the collection field for a session"""
+        db_session = self.SessionLocal()
+        try:
+            session = db_session.query(Session).filter(Session.id == session_id).first()
+            if session:
+                session.collection = collection
+                db_session.commit()
+                return session
         finally:
             db_session.close()
 

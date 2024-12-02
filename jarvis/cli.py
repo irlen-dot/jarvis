@@ -95,6 +95,7 @@ class CodeGenCLI:
 
         if args.all:
             self.show_directory_info()
+            
 
         if args.index:
             self.index_controller.start_indexing(str(self.original_working_dir))

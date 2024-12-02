@@ -6,10 +6,15 @@ import asyncio
 from pathlib import Path
 from typing import Optional
 
+from jarvis.helper.vector_db import VectorDB
 from jarvis.index_project.controller import IndexController
 from jarvis.main_controller import MainController
 from jarvis.project_template.controller import ProjectTempController
 
+
+
+
+from jarvis.codegen.controller import CodeGenController
 
 # Ensure project root is in Python path
 def setup_python_path() -> None:
@@ -17,9 +22,6 @@ def setup_python_path() -> None:
     project_root = Path(__file__).resolve().parent.parent
     if str(project_root) not in sys.path:
         sys.path.append(str(project_root))
-
-
-from jarvis.codegen.controller import CodeGenController
 
 
 class CodeGenCLI:
@@ -99,6 +101,7 @@ class CodeGenCLI:
 
         if args.init_project:
             self.project_controller.init_project(str(self.original_working_dir))
+
 
         if args.writecode:
             print(f"Working directory: {self.original_working_dir}")

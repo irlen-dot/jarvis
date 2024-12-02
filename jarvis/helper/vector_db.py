@@ -9,6 +9,8 @@ class VectorDB:
         self.collection_name = collection_name
         self._connect()
         
+
+
         # Check and create collection if doesn't exist
         if not utility.has_collection(self.collection_name):
             self._create_collection()

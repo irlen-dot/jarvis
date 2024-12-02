@@ -19,6 +19,7 @@ psycopg2-binary = "^2.9.10"
 pytube = "^15.0.0"
 pytubefix = "^8.2.0"
 pymilvus = "^2.5.0"
+langchain-core = "^0.3.21"
 
 
 [tool.poetry.group.dev.dependencies]

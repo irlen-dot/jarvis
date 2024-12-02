@@ -41,12 +41,7 @@ class VectorDB:
 
     def insert(self, texts: List[str], file_paths: List[str], vectors: List[List[float]]) -> List[int]:
         collection = Collection(self.collection_name)
-        data = [
-            [],  # for ids (auto-generated)
-            texts,  # for text field
-            file_paths,  # for file_path field
-            vectors  # for embeddings field
-        ]
+        data = [texts, file_paths, vectors]
         mr = collection.insert(data)
         return mr.primary_keys
 

@@ -12,9 +12,8 @@ from jarvis.main_controller import MainController
 from jarvis.project_template.controller import ProjectTempController
 
 
-
-
 from jarvis.codegen.controller import CodeGenController
+
 
 # Ensure project root is in Python path
 def setup_python_path() -> None:
@@ -33,7 +32,6 @@ class CodeGenCLI:
         self.code_controller = CodeGenController()
         self.main_controller = MainController()
         self.project_controller = ProjectTempController()
-        self.index_controller = IndexController()
 
     def create_parser(self) -> argparse.ArgumentParser:
         """Create and configure argument parser.
@@ -95,14 +93,13 @@ class CodeGenCLI:
 
         if args.all:
             self.show_directory_info()
-            
 
         if args.index:
-            self.index_controller.start_indexing(str(self.original_working_dir))
+            index_controller = IndexController()
+            index_controller.start_indexing(str(self.original_working_dir))
 
         if args.init_project:
             self.project_controller.init_project(str(self.original_working_dir))
-
 
         if args.writecode:
             print(f"Working directory: {self.original_working_dir}")

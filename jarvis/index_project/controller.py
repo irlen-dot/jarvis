@@ -8,9 +8,63 @@ import os
 
 
 class IndexController:
-    EXCLUDED_EXTENSIONS = {".meta", ".cs.meta"}
+
+    EXCLUDED_EXTENSIONS = {
+        ".meta",
+        ".cs.meta",
+        ".wav",
+        ".mp3",
+        ".aup3",
+        ".aup3-shm",
+        ".aup3-wal",
+        ".csproj",
+        ".unityproj",
+        ".sln",
+        ".suo",
+        ".tmp",
+        ".user",
+        ".userprefs",
+        ".pidb",
+        ".booproj",
+        ".svd",
+        ".pdb",
+        ".mdb",
+        ".opendb",
+        ".VC.db",
+        ".pidb.meta",
+        ".pdb.meta",
+        ".mdb.meta",
+        ".apk",
+        ".aab",
+        ".unitypackage",
+        ".app",
+        ".prefab",
+        ".prefab.meta",
+    }
+
+    IGNORED_DIRECTORIES = {
+        "Library",
+        "Temp",
+        "Obj",
+        "Build",
+        "Builds",
+        "Logs",
+        "UserSettings",
+        "MemoryCaptures",
+        "Recordings",
+        "ExportedObj",
+        ".consulo",
+        ".vs",
+        ".gradle",
+        "Assets/Plugins/Editor/JetBrains",
+        "StarterAssets",
+        "Materials",
+        "Prefabs",
+        "Sandbox",
+    }
+
     DIMENSIONS = 1536
-    DOCUMENT_SEPARATOR = "===============CUT"
+    DOCUMENT_SEPARATOR = "===============CUT==============="
 
     def __init__(self):
         self.embedding_service = EmbeddingService()
@@ -18,25 +72,38 @@ class IndexController:
         self.db_service = Database()
         self.base_path = ""
         self.indexed_doc = ""
-        # Don't initialize vector_db here anymore
+
+    def should_ignore_dir(self, dir_path: str) -> bool:
+        dir_name = os.path.basename(dir_path)
+        # Case-insensitive directory check
+        return any(
+            ignored.lower() == dir_name.lower() or ignored.lower() in dir_path.lower()
+            for ignored in self.IGNORED_DIRECTORIES
+        )
 
     def start_indexing(self, path: str):
         self.base_path = path
         self.collection_name = os.path.basename(os.path.normpath(path)).replace(
             " ", "_"
         )
-        print(f"The collection name: {self.collection_name}")
         self.vector_db = VectorDB(
             collection_name=self.collection_name, dim=self.DIMENSIONS
         )
 
         file_count = 0
-        for root, _, files in os.walk(path):
+        for root, dirs, files in os.walk(path):
+            # Filter directories using case-insensitive patterns
+            dirs[:] = [
+                d for d in dirs if not self.should_ignore_dir(os.path.join(root, d))
+            ]
+
             cs_files = [
                 f
                 for f in files
                 if f.endswith(".cs")
-                and not any(f.endswith(ext) for ext in self.EXCLUDED_EXTENSIONS)
+                and not any(
+                    f.lower().endswith(ext.lower()) for ext in self.EXCLUDED_EXTENSIONS
+                )
             ]
 
             for file in cs_files:
@@ -44,12 +111,9 @@ class IndexController:
                 self.current_name = file
                 self.process_file()
                 file_count += 1
-
-                # Add separator every 3-4 files randomly
                 if file_count % 3 == 0 or file_count % 4 == 0:
                     self.indexed_doc += f"\n{self.DOCUMENT_SEPARATOR}\n"
 
-        print(f"Final indexed document:\n{self.indexed_doc}")
         self.chunk_doc()
         self.save_collection()
 

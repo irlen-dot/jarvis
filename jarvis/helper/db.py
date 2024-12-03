@@ -112,6 +112,7 @@ class Database:
 
     def create_project_collection(self, name: str, path: str):
         db_session = self.SessionLocal()
+        path = self._replace_path_slashes(path=path)
         try:
             collection = ProjectCollection(name=name, path=path)
             db_session.add(collection)
@@ -124,6 +125,7 @@ class Database:
     def get_collection_by_path(self, path: str):
         """Get a collection by path"""
         db_session = self.SessionLocal()
+        path = self._replace_path_slashes(path=path)
         try:
             return (
                 db_session.query(ProjectCollection)

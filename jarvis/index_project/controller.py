@@ -22,27 +22,33 @@ class IndexController:
 
     def start_indexing(self, path: str):
         self.base_path = path
-        # Get directory name for collection
         self.collection_name = os.path.basename(os.path.normpath(path))
         print(f"The collection name: {self.collection_name}")
-        # Initialize vector_db with directory name
         self.vector_db = VectorDB(
             collection_name=self.collection_name, dim=self.DIMENSIONS
         )
 
+        file_count = 0
         for root, _, files in os.walk(path):
-            for file in files:
-                if file.endswith(".cs") and not any(
-                    file.endswith(ext) for ext in self.EXCLUDED_EXTENSIONS
-                ):
-                    self.current_path = root
-                    self.current_name = file
-                    self.process_file()
-            if any(f.endswith(".cs") for f in files):
-                self.indexed_doc += f"\n{self.DOCUMENT_SEPARATOR}\n"
+            cs_files = [
+                f
+                for f in files
+                if f.endswith(".cs")
+                and not any(f.endswith(ext) for ext in self.EXCLUDED_EXTENSIONS)
+            ]
+
+            for file in cs_files:
+                self.current_path = root
+                self.current_name = file
+                self.process_file()
+                file_count += 1
+
+                # Add separator every 3-4 files randomly
+                if file_count % 3 == 0 or file_count % 4 == 0:
+                    self.indexed_doc += f"\n{self.DOCUMENT_SEPARATOR}\n"
+
         print(f"Final indexed document:\n{self.indexed_doc}")
         self.chunk_doc()
-
         self.save_collection()
 
     def save_collection(self):

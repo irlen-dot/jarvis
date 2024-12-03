@@ -14,12 +14,15 @@ from jarvis.codegen.types import ToolResult, ToolType
 from jarvis.helper.base_controller import BaseController
 from jarvis.helper.cmd_prompt import run_command
 from jarvis.helper.db import Database, Role, Session
+from jarvis.helper.embedding import EmbeddingService
 from jarvis.helper.models.coding_model import CodingModelSelector
 from langchain_core.tools import BaseTool
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools import tool
 from langchain_core.messages import AIMessage, HumanMessage
+
+from jarvis.helper.vector_db import VectorDB
 
 
 class CodeGenToolManager:
@@ -83,6 +86,7 @@ class CodeGenController(BaseController):
             tools=self.tool_manager.get_available_tools(),
         )
 
+        self.embedding = EmbeddingService()
         self.db = Database()
 
         # Create agent executor
@@ -93,9 +97,19 @@ class CodeGenController(BaseController):
             handle_parsing_errors=True,
         )
 
+    def get_file_indexes(self, input: str, path: str):
+        collection = self.db.get_collection_by_path(path=path)
+        vector_store = VectorDB(collection_name=collection.name)
+        embeddings = self.embedding.embed_query(input)
+        # TODO Clean this part of the code
+        return vector_store.search(embeddings)[0].get("text")
+
     async def manage_input(self, input: str, path: Path) -> Dict[str, Any]:
         """Process user input and execute appropriate tools"""
-        messages = self.db.get_messages_by_sessions_path(str(path))
+        path = str(path)
+        messages = self.db.get_messages_by_sessions_path(path)
+        indexed_files = self.get_file_indexes(input=input, path=path)
+        print(indexed_files)
 
         # Convert to LangChain message objects
         formatted_messages = []
@@ -109,7 +123,7 @@ class CodeGenController(BaseController):
                 for msg in messages
             ]
 
-        agent_input = input + f"\n\n The current path of the directory is: {path}"
+        agent_input = input + f"\n\n The available files: {indexed_files}"
 
         try:
             # Execute agent with input

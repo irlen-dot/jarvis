@@ -22,7 +22,9 @@ class IndexController:
 
     def start_indexing(self, path: str):
         self.base_path = path
-        self.collection_name = os.path.basename(os.path.normpath(path))
+        self.collection_name = os.path.basename(os.path.normpath(path)).replace(
+            " ", "_"
+        )
         print(f"The collection name: {self.collection_name}")
         self.vector_db = VectorDB(
             collection_name=self.collection_name, dim=self.DIMENSIONS

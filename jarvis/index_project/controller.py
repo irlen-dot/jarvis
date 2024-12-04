@@ -1,3 +1,4 @@
+import pdb
 from jarvis.helper.cmd_dirs_to_json import parse_dir_output
 from jarvis.helper.cmd_prompt import change_dir, run_command
 from jarvis.helper.db import Database
@@ -9,58 +10,10 @@ import os
 
 class IndexController:
 
-    EXCLUDED_EXTENSIONS = {
-        ".meta",
-        ".cs.meta",
-        ".wav",
-        ".mp3",
-        ".aup3",
-        ".aup3-shm",
-        ".aup3-wal",
-        ".csproj",
-        ".unityproj",
-        ".sln",
-        ".suo",
-        ".tmp",
-        ".user",
-        ".userprefs",
-        ".pidb",
-        ".booproj",
-        ".svd",
-        ".pdb",
-        ".mdb",
-        ".opendb",
-        ".VC.db",
-        ".pidb.meta",
-        ".pdb.meta",
-        ".mdb.meta",
-        ".apk",
-        ".aab",
-        ".unitypackage",
-        ".app",
-        ".prefab",
-        ".prefab.meta",
-    }
+    INCLUDED_EXTENSIONS = {".cs"}  # Only process .cs files, can be expanded as needed
 
     IGNORED_DIRECTORIES = {
-        "Library",
-        "Temp",
-        "Obj",
-        "Build",
-        "Builds",
-        "Logs",
-        "UserSettings",
-        "MemoryCaptures",
-        "Recordings",
-        "ExportedObj",
-        ".consulo",
-        ".vs",
-        ".gradle",
-        "Assets/Plugins/Editor/JetBrains",
         "StarterAssets",
-        "Materials",
-        "Prefabs",
-        "Sandbox",
     }
 
     DIMENSIONS = 1536
@@ -81,7 +34,9 @@ class IndexController:
             for ignored in self.IGNORED_DIRECTORIES
         )
 
-    def start_indexing(self, path: str):
+    def start_indexing(self, path: str, project_type: str):
+        print(project_type)
+        pdb.set_trace()
         self.base_path = path
         self.collection_name = os.path.basename(os.path.normpath(path)).replace(
             " ", "_"
@@ -97,16 +52,16 @@ class IndexController:
                 d for d in dirs if not self.should_ignore_dir(os.path.join(root, d))
             ]
 
-            cs_files = [
+            # Filter files based on included extensions
+            included_files = [
                 f
                 for f in files
-                if f.endswith(".cs")
-                and not any(
-                    f.lower().endswith(ext.lower()) for ext in self.EXCLUDED_EXTENSIONS
+                if any(
+                    f.lower().endswith(ext.lower()) for ext in self.INCLUDED_EXTENSIONS
                 )
             ]
 
-            for file in cs_files:
+            for file in included_files:
                 self.current_path = root
                 self.current_name = file
                 self.process_file()

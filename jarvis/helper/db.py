@@ -37,9 +37,6 @@ class Base(DeclarativeBase):
     pass
 
 
-# Base = declarative_base()
-
-
 class ProjectCollection(Base):
     __tablename__ = "project_collections"
 

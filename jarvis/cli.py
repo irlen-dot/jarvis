@@ -1,42 +1,40 @@
+import msvcrt
 import os
 import pdb
 import sys
 import argparse
 import asyncio
 from pathlib import Path
-from typing import Optional
-
+from jarvis.index_project.controller import IndexController
 from jarvis.main_controller import MainController
 from jarvis.project_template.controller import ProjectTempController
+from jarvis.codegen.controller import CodeGenController
 
 
-# Ensure project root is in Python path
 def setup_python_path() -> None:
-    """Add project root to Python path if needed."""
     project_root = Path(__file__).resolve().parent.parent
     if str(project_root) not in sys.path:
         sys.path.append(str(project_root))
 
 
-from jarvis.codegen.controller import CodeGenController
+def get_key() -> str:
+    """Get a single keypress from terminal."""
+    key = msvcrt.getch()
+    if key == b"\xe0":  # Special key prefix
+        key = msvcrt.getch()
+        return {b"H": "up", b"P": "down"}.get(key, None)
+    return key.decode("utf-8")
 
 
 class CodeGenCLI:
-    """CLI interface for the code generation system."""
-
     def __init__(self):
-        """Initialize CLI with working directory and controller."""
         self.original_working_dir = Path.cwd()
         self.code_controller = CodeGenController()
         self.main_controller = MainController()
         self.project_controller = ProjectTempController()
+        self.project_types = ["unity", "python", "nodejs"]
 
     def create_parser(self) -> argparse.ArgumentParser:
-        """Create and configure argument parser.
-
-        Returns:
-            Configured argument parser
-        """
         parser = argparse.ArgumentParser(
             description="Code generation and directory information utility"
         )
@@ -50,6 +48,11 @@ class CodeGenCLI:
 
         parser.add_argument(
             "-i",
+            "--index",
+            help="It indexes all folders and files of the project. So, you that you can have access to the code",
+        )
+
+        parser.add_argument(
             "--init-project",
             help="Init a project in Jarvis DB, to mantain a chat history",
         )
@@ -68,24 +71,40 @@ class CodeGenCLI:
         return parser
 
     def show_directory_info(self) -> None:
-        """Display current directory information."""
         print(f"Current working directory: {self.original_working_dir}")
         print(f"Script location: {Path(__file__).parent.resolve()}")
 
+    def select_project_type(self) -> str:
+        selected = 0
+        while True:
+            os.system("cls")
+            print("\nSelect project type (↑↓ to move, Enter to select):\n")
+
+            for i, proj_type in enumerate(self.project_types):
+                if i == selected:
+                    print(f" > {proj_type} <")
+                else:
+                    print(f"   {proj_type}  ")
+
+            key = get_key()
+            if key == "up" and selected > 0:
+                selected -= 1
+            elif key == "down" and selected < len(self.project_types) - 1:
+                selected += 1
+            elif key == "\r":  # Enter key
+                return self.project_types[selected]
+
     async def process_args(self, args: argparse.Namespace) -> int:
-        """Process parsed command line arguments.
-
-        Args:
-            args: Parsed command line arguments
-
-        Returns:
-            Exit code (0 for success)
-        """
-        # pdb.set_trace()
-        print(args.init_project)
-
         if args.all:
             self.show_directory_info()
+
+        if args.index:
+            project_type = self.select_project_type()
+            print(f"\nIndexing {project_type} project...")
+            index_controller = IndexController()
+            index_controller.start_indexing(
+                str(self.original_working_dir), project_type
+            )
 
         if args.init_project:
             self.project_controller.init_project(str(self.original_working_dir))
@@ -105,26 +124,14 @@ class CodeGenCLI:
 
 
 async def bootstrap() -> int:
-    """Initialize and run the CLI application.
-
-    Returns:
-        Exit code (0 for success)
-    """
     setup_python_path()
-
     cli = CodeGenCLI()
     parser = cli.create_parser()
     args = parser.parse_args()
-
     return await cli.process_args(args)
 
 
 def main() -> int:
-    """Main entry point for the application.
-
-    Returns:
-        Exit code (0 for success)
-    """
     try:
         return asyncio.run(bootstrap())
     except KeyboardInterrupt:

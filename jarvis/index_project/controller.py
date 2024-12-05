@@ -1,20 +1,17 @@
 import pdb
+from typing import Dict
+from jarvis.codegen.service import read_file
 from jarvis.helper.cmd_dirs_to_json import parse_dir_output
 from jarvis.helper.cmd_prompt import change_dir, run_command
 from jarvis.helper.db import Database
 from jarvis.helper.embedding import EmbeddingService
 from jarvis.helper.vector_db import VectorDB
 from jarvis.index_project.agent import IndexCodeAgent
+from yaml import safe_load
 import os
 
 
 class IndexController:
-
-    INCLUDED_EXTENSIONS = {".cs"}  # Only process .cs files, can be expanded as needed
-
-    IGNORED_DIRECTORIES = {
-        "StarterAssets",
-    }
 
     DIMENSIONS = 1536
     DOCUMENT_SEPARATOR = "===============CUT==============="
@@ -31,13 +28,42 @@ class IndexController:
         # Case-insensitive directory check
         return any(
             ignored.lower() == dir_name.lower() or ignored.lower() in dir_path.lower()
-            for ignored in self.IGNORED_DIRECTORIES
+            for ignored in self.ignored_directories
         )
 
+    # Yo, Every project has a Jarvis.yaml file
+    # In which we can set the directory from which
+    # the indexing will start as well as the directories
+    # which it has to ignore.
+    def get_projects_config(self, path: str) -> Dict[str, any]:
+        path = os.path.join(path, "Jarvis.yaml")
+        try:
+            file = open(path, "r", encoding="utf-8")
+            raw_content = file.read()
+            content = safe_load(raw_content)
+            return content
+        except FileNotFoundError:
+            print("The Jarvis.yaml is missing. run a 'jarvis --init .' command.")
+
     def start_indexing(self, path: str, project_type: str):
-        print(project_type)
-        pdb.set_trace()
+        configs = self.get_projects_config(path=path)
+
+        # These are the files that will be included or excluded
+        # from indexing.
+        self.ignored_directories = configs.get("ignored-directories")
+        self.included_file_extensions = configs.get("included-file-extensions")
+        starting_directory = configs.get("starting-directory")
+
+        # The base path is the path of the whole
+        # project, not just the "src" folder.
         self.base_path = path
+
+        # This is the path to the "src" folder
+        path = os.path.join(path, starting_directory)
+
+        # You are creating a separate project collection
+        # Where it will hold indexes to your project files
+        # and folders
         self.collection_name = os.path.basename(os.path.normpath(path)).replace(
             " ", "_"
         )
@@ -45,6 +71,11 @@ class IndexController:
             collection_name=self.collection_name, dim=self.DIMENSIONS
         )
 
+        self.walk_through_project(path)
+        self.chunk_doc()
+        self.save_collection()
+
+    def walk_through_project(path: str):
         file_count = 0
         for root, dirs, files in os.walk(path):
             # Filter directories using case-insensitive patterns
@@ -57,7 +88,8 @@ class IndexController:
                 f
                 for f in files
                 if any(
-                    f.lower().endswith(ext.lower()) for ext in self.INCLUDED_EXTENSIONS
+                    f.lower().endswith(ext.lower())
+                    for ext in self.included_file_extensions
                 )
             ]
 
@@ -68,9 +100,6 @@ class IndexController:
                 file_count += 1
                 if file_count % 3 == 0 or file_count % 4 == 0:
                     self.indexed_doc += f"\n{self.DOCUMENT_SEPARATOR}\n"
-
-        self.chunk_doc()
-        self.save_collection()
 
     def save_collection(self):
         """Create a collection if it doesn't exist, otherwise return existing one"""

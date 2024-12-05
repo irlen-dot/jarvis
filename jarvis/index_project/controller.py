@@ -45,7 +45,7 @@ class IndexController:
         except FileNotFoundError:
             print("The Jarvis.yaml is missing. run a 'jarvis --init .' command.")
 
-    def start_indexing(self, path: str, project_type: str):
+    def start_indexing(self, path: str):
         configs = self.get_projects_config(path=path)
 
         # These are the files that will be included or excluded
@@ -71,11 +71,14 @@ class IndexController:
             collection_name=self.collection_name, dim=self.DIMENSIONS
         )
 
+        # Index all the files into one string
         self.walk_through_project(path)
+        # Chunk this string
         self.chunk_doc()
+        # Embed and save for further RAG operations
         self.save_collection()
 
-    def walk_through_project(path: str):
+    def walk_through_project(self, path: str):
         file_count = 0
         for root, dirs, files in os.walk(path):
             # Filter directories using case-insensitive patterns

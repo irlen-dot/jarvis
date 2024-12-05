@@ -99,14 +99,11 @@ class CodeGenCLI:
             self.show_directory_info()
 
         if args.index:
-            project_type = self.select_project_type()
-            print(f"\nIndexing {project_type} project...")
             index_controller = IndexController()
-            index_controller.start_indexing(
-                str(self.original_working_dir), project_type
-            )
+            index_controller.start_indexing(str(self.original_working_dir))
 
         if args.init_project:
+            project_type = self.select_project_type()
             self.project_controller.init_project(str(self.original_working_dir))
 
         if args.writecode:

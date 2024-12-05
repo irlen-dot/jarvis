@@ -4,10 +4,10 @@ SETLOCAL EnableDelayedExpansion
 REM Store original directory
 SET "ORIGINAL_DIR=%CD%"
 
-REM Set project root - MODIFY THIS PATH TO YOUR ACTUAL JARVIS PROJECT ROOT
+REM Set project root
 SET "PROJECT_ROOT=C:\Users\irlen\Documents\projects\langchain\jarvis"
 
-REM Verify project directory exists
+REM Verify projecz  t directory exists
 IF NOT EXIST "%PROJECT_ROOT%" (
     echo Error: Project directory not found at %PROJECT_ROOT%
     exit /b 1

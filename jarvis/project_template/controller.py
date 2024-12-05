@@ -51,8 +51,10 @@ class ProjectTempController(BaseController):
 
         return output
 
-    def init_project(self, path: str):
+    def init_project(self, path: str, project_type: str):
         print("The project is initing...")
-        session = self.db.create_session(path)
+        session = self.db.create_session(
+            path=path,
+        )
         print("The project is inited.")
         return session

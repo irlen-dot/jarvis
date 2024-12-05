@@ -57,6 +57,7 @@ class Session(Base):
     )
     type = Column(String, nullable=True)
     collection = Column(String, nullable=False)
+    # project_type = Column(String, nullable=True)
 
 
 class Message(Base):

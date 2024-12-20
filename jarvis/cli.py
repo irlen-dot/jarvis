@@ -31,6 +31,7 @@ class CodeGenCLI:
         self.main_controller = MainController()
         self.project_controller = ProjectTempController()
         self.project_types = ["unity", "python", "nodejs"]
+        self.index_controller = IndexController()
 
     def show_directory_info(self) -> None:
         click.echo(f"Current working directory: {self.original_working_dir}")
@@ -57,18 +58,25 @@ class CodeGenCLI:
                 return self.project_types[selected]
 
     async def process_command(
-        self, show_all: bool, index: str, init_project: str, writecode: str, prompt: str
+        self,
+        show_all: bool,
+        index: str,
+        init_project: str,
+        clear_cache: str,
+        writecode: str,
+        prompt: str,
     ) -> int:
         if show_all:
             self.show_directory_info()
 
         if index:
-            index_controller = IndexController()
-            index_controller.start_indexing(str(self.original_working_dir))
+            self.index_controller.start_indexing(str(self.original_working_dir))
 
         if init_project:
             project_type = self.select_project_type()
-            self.project_controller.init_project(str(self.original_working_dir))
+            self.project_controller.init_project(
+                str(self.original_working_dir), project_type
+            )
 
         if writecode:
             click.echo(f"Working directory: {self.original_working_dir}")
@@ -78,6 +86,9 @@ class CodeGenCLI:
 
         if prompt:
             self.main_controller.manage_input(prompt, str(self.original_working_dir))
+
+        if clear_cache:
+            self.index_controller.clear_collection(path=self.original_working_dir)
 
         return 0
 
@@ -95,15 +106,18 @@ class CodeGenCLI:
 @click.option(
     "--init-project", help="Init a project in Jarvis DB to maintain chat history"
 )
+@click.option("--clear-cache", help="Clear all indexed files.")
 @click.option("--writecode", help="LLM prompt for code generation")
 @click.option("-p", "--prompt", help="Basic LLM prompt")
-def main(all, index, init_project, writecode, prompt):
+def main(all, index, init_project, clear_cache, writecode, prompt):
     """Code generation and directory information utility"""
     try:
         setup_python_path()
         cli = CodeGenCLI()
         return asyncio.run(
-            cli.process_command(all, index, init_project, writecode, prompt)
+            cli.process_command(
+                all, index, init_project, clear_cache, writecode, prompt
+            )
         )
     except KeyboardInterrupt:
         click.echo("\nOperation cancelled by user")

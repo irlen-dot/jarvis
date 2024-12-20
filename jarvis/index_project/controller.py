@@ -1,18 +1,15 @@
-import pdb
+import os
+import click
 from typing import Dict
-from jarvis.codegen.service import read_file
-from jarvis.helper.cmd_dirs_to_json import parse_dir_output
-from jarvis.helper.cmd_prompt import change_dir, run_command
+
+from yaml import safe_load
 from jarvis.helper.db import Database
 from jarvis.helper.embedding import EmbeddingService
 from jarvis.helper.vector_db import VectorDB
 from jarvis.index_project.agent import IndexCodeAgent
-from yaml import safe_load
-import os
 
 
 class IndexController:
-
     DIMENSIONS = 1536
     DOCUMENT_SEPARATOR = "===============CUT==============="
 
@@ -22,6 +19,42 @@ class IndexController:
         self.db_service = Database()
         self.base_path = ""
         self.indexed_doc = ""
+        self.collection_name = None
+        self.vector_db = None
+
+    def clear_collection(self, path: str) -> None:
+        """
+        Clear all documents from the collection associated with the given project path.
+
+        Args:
+            path (str): The base path of the project whose collection should be cleared
+
+        Raises:
+            Exception: If collection doesn't exist or clearing fails
+        """
+        try:
+            # TODO the Path.replace is not true
+
+            # Get existing collection info
+            existing_collection = self.db_service.get_collection_by_path(path)
+            if not existing_collection:
+                raise Exception(f"No collection found for project at path: {path}")
+
+            # Initialize vector_db with the existing collection name
+            self.collection_name = existing_collection["name"]
+            self.vector_db = VectorDB(
+                collection_name=self.collection_name, dim=self.DIMENSIONS
+            )
+
+            # Clear all documents from the collection
+            self.vector_db.drop_collection()
+            self.db_service.delete_collection_by_path(path)
+
+            click.echo(f"Successfully cleared collection: {self.collection_name}")
+
+        except Exception as e:
+            click.echo(f"Error clearing collection: {str(e)}")
+            raise
 
     def should_ignore_dir(self, dir_path: str) -> bool:
         dir_name = os.path.basename(dir_path)

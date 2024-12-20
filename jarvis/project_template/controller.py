@@ -1,6 +1,7 @@
 import json
 from typing import Any, Dict
 from jarvis.git.service import create_and_push_repo
+from jarvis.helper.cmd_prompt import change_dir
 from jarvis.helper.base_controller import BaseController
 from jarvis.helper.db import Database, Role
 from jarvis.helper.models.coding_model import CodingModelSelector
@@ -10,6 +11,7 @@ from jarvis.helper.string_to_dict import string_to_dict
 from jarvis.project_template.prompt import project_templ_controller_prompt
 from jarvis.python.service import create_python_project
 from jarvis.unity.service import create_unity_project
+from jarvis.unity.global_vars import untiy_jarvis_file
 
 
 class ProjectTempController(BaseController):
@@ -56,5 +58,9 @@ class ProjectTempController(BaseController):
         session = self.db.create_session(
             path=path,
         )
-        print("The project is inited.")
+        with change_dir(path):
+            with open("Jarvis.yaml", "w") as f:
+                f.write(untiy_jarvis_file)
+        print("Project in inited.")
+        print("A Jarvis.yaml file should have been created in you workdir.")
         return session

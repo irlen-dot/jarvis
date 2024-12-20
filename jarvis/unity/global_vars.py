@@ -1,5 +1,4 @@
-untiy_jarvis_file = """
-# Jarvis
+untiy_jarvis_file = """# Jarvis
 # Created by Irlen Turlykhanov (https://github.com/irlen-dot)
 
 # Happy engineering, you're the champ!

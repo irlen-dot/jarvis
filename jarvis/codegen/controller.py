@@ -99,6 +99,8 @@ class CodeGenController(BaseController):
 
     def get_file_indexes(self, input: str, path: str):
         collection = self.db.get_collection_by_path(path=path)
+        print(f"The collection name: {collection.name}")
+        pdb.set_trace()
         vector_store = VectorDB(collection_name=collection.name)
         embeddings = self.embedding.embed_query(input)
         # TODO Clean this part of the code

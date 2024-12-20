@@ -256,3 +256,66 @@ class Database:
         parsed_path = path.replace("\\", "/")
         print(f"the parsed Parsed path: {parsed_path}")
         return parsed_path
+
+    def delete_collection_by_path(self, path: str) -> bool:
+        """
+        Delete a project collection and its associated data by path.
+
+        Args:
+            path (str): The path of the project collection to delete
+
+        Returns:
+            bool: True if deletion was successful, False if collection wasn't found
+        """
+        db_session = self.SessionLocal()
+        path = self._replace_path_slashes(path)
+
+        try:
+            collection = (
+                db_session.query(ProjectCollection)
+                .filter(ProjectCollection.path == path)
+                .first()
+            )
+
+            if collection:
+                # Delete the collection
+                db_session.delete(collection)
+                db_session.commit()
+                return True
+            return False
+        except Exception as e:
+            db_session.rollback()
+            raise e
+        finally:
+            db_session.close()
+
+    def delete_collection_by_name(self, name: str) -> bool:
+        """
+        Delete a project collection and its associated data by collection name.
+
+        Args:
+            name (str): The name of the project collection to delete
+
+        Returns:
+            bool: True if deletion was successful, False if collection wasn't found
+        """
+        db_session = self.SessionLocal()
+
+        try:
+            collection = (
+                db_session.query(ProjectCollection)
+                .filter(ProjectCollection.name == name)
+                .first()
+            )
+
+            if collection:
+                # Delete the collection
+                db_session.delete(collection)
+                db_session.commit()
+                return True
+            return False
+        except Exception as e:
+            db_session.rollback()
+            raise e
+        finally:
+            db_session.close()

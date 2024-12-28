@@ -44,6 +44,7 @@ class ProjectCollection(Base):
     name = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     path = Column(String, nullable=False)
+    cache_cleaned = Column(bool)
 
 
 class Session(Base):

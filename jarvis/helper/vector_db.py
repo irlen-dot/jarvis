@@ -1,45 +1,59 @@
-from pymilvus import connections, Collection, CollectionSchema, DataType, FieldSchema, utility
+from pymilvus import (
+    connections,
+    Collection,
+    CollectionSchema,
+    DataType,
+    FieldSchema,
+    utility,
+)
 from typing import List, Dict, Any, Tuple
 
+
 class VectorDB:
-    def __init__(self, collection_name: str = "project_files", host: str = "localhost", port: str = "19530", dim: int = 1536):
+    def __init__(
+        self,
+        collection_name: str = "project_files",
+        host: str = "localhost",
+        port: str = "19530",
+        dim: int = 1536,
+    ):
         self.host = host
         self.port = port
         self.dim = dim
         self.collection_name = collection_name
         self._connect()
-        
-
 
         # Check and create collection if doesn't exist
         if not utility.has_collection(self.collection_name):
             self._create_collection()
 
     def _connect(self):
-        connections.connect(
-            alias="default",
-            host=self.host,
-            port=self.port
-        )
+        connections.connect(alias="default", host=self.host, port=self.port)
 
     def _create_collection(self):
         fields = [
             FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
             FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=65535),
             FieldSchema(name="file_path", dtype=DataType.VARCHAR, max_length=65535),
-            FieldSchema(name="embeddings", dtype=DataType.FLOAT_VECTOR, dim=self.dim)
+            FieldSchema(name="embeddings", dtype=DataType.FLOAT_VECTOR, dim=self.dim),
         ]
         schema = CollectionSchema(fields)
         collection = Collection(self.collection_name, schema)
-        
+
         # Create index for vector field
         collection.create_index(
             field_name="embeddings",
-            index_params={"index_type": "IVF_FLAT", "metric_type": "L2", "params": {"nlist": 1024}}
+            index_params={
+                "index_type": "IVF_FLAT",
+                "metric_type": "L2",
+                "params": {"nlist": 1024},
+            },
         )
         return collection
 
-    def insert(self, texts: List[str], file_paths: List[str], vectors: List[List[float]]) -> List[int]:
+    def insert(
+        self, texts: List[str], file_paths: List[str], vectors: List[List[float]]
+    ) -> List[int]:
         collection = Collection(self.collection_name)
         data = [texts, file_paths, vectors]
         mr = collection.insert(data)
@@ -48,30 +62,29 @@ class VectorDB:
     def search(self, query_vector: List[float], top_k: int = 5) -> List[Dict[str, Any]]:
         collection = Collection(self.collection_name)
         collection.load()
-        
-        search_params = {
-            "metric_type": "L2",
-            "params": {"nprobe": 10}
-        }
-        
+
+        search_params = {"metric_type": "L2", "params": {"nprobe": 10}}
+
         results = collection.search(
             data=[query_vector],
             anns_field="embeddings",
             param=search_params,
             limit=top_k,
-            output_fields=["text", "file_path"]
+            output_fields=["text", "file_path"],
         )
-        
+
         search_results = []
         for hits in results:
             for hit in hits:
-                search_results.append({
-                    "id": hit.id,
-                    "distance": hit.distance,
-                    "text": hit.entity.get('text'),
-                    "file_path": hit.entity.get('file_path')
-                })
-                
+                search_results.append(
+                    {
+                        "id": hit.id,
+                        "distance": hit.distance,
+                        "text": hit.entity.get("text"),
+                        "file_path": hit.entity.get("file_path"),
+                    }
+                )
+
         collection.release()
         return search_results
 
@@ -81,3 +94,29 @@ class VectorDB:
             Collection(self.collection_name).drop()
             return True
         return False
+
+    def clear_collection(self) -> bool:
+        """
+        Clear all documents from the collection while preserving the collection structure.
+
+        Returns:
+            bool: True if collection was cleared successfully, False if collection doesn't exist
+        """
+        try:
+            if utility.has_collection(self.collection_name):
+                collection = Collection(self.collection_name)
+                # Load collection before operations
+                collection.load()
+
+                try:
+                    # Delete all entities
+                    collection.delete(expr="id >= 0")
+                    collection.flush()  # Ensure changes are persisted
+                finally:
+                    # Always release the collection after operations
+                    collection.release()
+                return True
+            return False
+        except Exception as e:
+            print(f"Error clearing collection: {str(e)}")
+            raise

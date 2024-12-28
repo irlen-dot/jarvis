@@ -88,7 +88,7 @@ class CodeGenCLI:
             self.main_controller.manage_input(prompt, str(self.original_working_dir))
 
         if clear_cache:
-            self.index_controller.clear_collection(path=self.original_working_dir)
+            self.index_controller.clear_collection(path=str(self.original_working_dir))
 
         return 0
 

@@ -13,7 +13,7 @@ class MainController(BaseController):
     def __init__(self):
         super().__init__(
             InternalModelSelector,
-            """
+            prompt_text="""
         The input is related to:
         'create a project template',
         'download music',

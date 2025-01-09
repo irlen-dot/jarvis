@@ -71,6 +71,7 @@ class CodeGenCLI:
         writecode: str,
         prompt: str,
         open_jarvis: str,
+        index_added_files: str,
     ) -> int:
 
         if show_all:
@@ -96,6 +97,9 @@ class CodeGenCLI:
 
         if clear_cache:
             self.index_controller.clear_collection(path=str(self.original_working_dir))
+
+        if index_added_files:
+            self.index_controller.index_added_files(path=str(self.original_working_dir))
 
         if open_jarvis:
             with change_dir(self.jarvis_path):
@@ -123,14 +127,36 @@ class CodeGenCLI:
 @click.option(
     "-o", "--open-jarvis", help="Open the jarvis code. MADE FOR DEBUG PURPOSES"
 )
-def main(all, index, init_project, clear_cache, writecode, prompt, open_jarvis):
+@click.option(
+    "-r",
+    "--index-added-files",
+    is_flag=True,
+    help="Index files that are added to the project",
+)
+def main(
+    all,
+    index,
+    init_project,
+    clear_cache,
+    writecode,
+    prompt,
+    open_jarvis,
+    index_added_files,
+):
     """Code generation and directory information utility"""
     try:
         setup_python_path()
         cli = CodeGenCLI()
         return asyncio.run(
             cli.process_command(
-                all, index, init_project, clear_cache, writecode, prompt, open_jarvis
+                all,
+                index,
+                init_project,
+                clear_cache,
+                writecode,
+                prompt,
+                open_jarvis,
+                index_added_files,
             )
         )
     except KeyboardInterrupt:

@@ -1,5 +1,6 @@
 # index_controller.py
 import click
+from jarvis.helper.cmd_prompt import change_dir, run_command
 from jarvis.index_project.service import IndexService
 
 
@@ -26,7 +27,7 @@ class IndexController:
     def start_indexing(self, path: str) -> None:
         """Handle project indexing request."""
         try:
-            result = self.index_service.start_indexing(path)
+            result = self.index_service.main_indexing(path)
 
             if result["success"]:
                 click.echo(f"Successfully indexed project:")
@@ -39,4 +40,20 @@ class IndexController:
             click.echo(f"Error during indexing: {str(e)}")
             raise
 
-    # def index_added_files(self, ):
+    def index_added_files(self, path: str):
+        """Indexes files that are added to the project"""
+        with change_dir(path):
+            (_, added_files) = run_command(f"git ls-files --others --exclude-standard")
+            if added_files:
+                added_files_array = [
+                    f for f in added_files.strip().split("\n") if f.endswith(".cs")
+                ]
+
+                print(added_files_array)
+                if added_files_array[0]:  # Check if array is not just an empty string
+                    click.echo(f"Found {len(added_files_array)} new files to index")
+                else:
+                    click.echo("No new files found to index")
+            else:
+                added_files_array = []
+                click.echo("No new files found to index")

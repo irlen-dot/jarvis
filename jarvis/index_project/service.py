@@ -18,29 +18,32 @@ class IndexService:
         self.embedding_service = EmbeddingService()
         self.index_code_agent = IndexCodeAgent()
         self.db_service = Database()
-        self.base_path = ""
-        self.indexed_doc = ""
-        self.collection_name = None
-        self.vector_db = None
-        self.ignored_directories = []
-        self.included_file_extensions = []
-        self.current_path = None
-        self.current_name = None
 
     def clear_collection(self, path: str) -> None:
-        """Clear a collection and its documents."""
+        """Clear a collection and its associated documents from both vector database and metadata storage.
+
+        Args:
+            path (str): The file system path of the project whose collection should be cleared
+
+        Returns:
+            dict: A dictionary containing:
+                - success (bool): Whether the deletion was successful
+                - collection_name (str): Name of the cleared collection
+
+        Raises:
+            Exception: If no collection exists for the given path
+        """
+
         existing_collection = self.db_service.get_collection_by_path(path)
         if not existing_collection:
             raise Exception(f"No collection found for project at path: {path}")
 
-        self.collection_name = existing_collection.name
-        self.vector_db = VectorDB(
-            collection_name=self.collection_name, dim=self.DIMENSIONS
-        )
-        self.vector_db.clear_collection()
+        collection_name = existing_collection.name
+        vector_db = VectorDB(collection_name=collection_name, dim=self.DIMENSIONS)
 
+        vector_db.clear_collection()
         result = self.db_service.delete_collection_by_path(path)
-        return {"success": result, "collection_name": self.collection_name}
+        return {"success": result, "collection_name": collection_name}
 
     def get_projects_config(self, path: str) -> Dict[str, any]:
         """Read and parse Jarvis.yaml configuration."""
@@ -70,68 +73,109 @@ class IndexService:
 
         return collection_name
 
-    def should_ignore_dir(self, dir_path: str) -> bool:
+    def should_ignore_dir(self, dir_path: str, ignored_directories: List[str]) -> bool:
         """Check if directory should be ignored."""
         dir_name = os.path.basename(dir_path)
         return any(
             ignored.lower() == dir_name.lower() or ignored.lower() in dir_path.lower()
-            for ignored in self.ignored_directories
+            for ignored in ignored_directories
         )
 
-    def process_file(self) -> Optional[str]:
+    def process_file(
+        self, path: str, name: str, indexed_doc: str
+    ) -> tuple[Optional[str], str]:
         """Process a single file and return its analysis."""
         try:
-            content = self._read_file()
+            content = self._read_file(path, name)
             file_analysis = self.index_code_agent.start_indexing(content)
-            abs_path = os.path.abspath(
-                os.path.join(self.current_path, self.current_name)
-            )
+            abs_path = os.path.abspath(os.path.join(path, name))
             file_analysis = f"{file_analysis}\npath: {abs_path}"
-            self.indexed_doc += f"{file_analysis}\n"
-            return file_analysis
+            indexed_doc += f"{file_analysis}\n"
+            return file_analysis, indexed_doc
         except Exception as e:
-            print(f"Error processing file {self.current_name}: {str(e)}")
-            return None
+            print(f"Error processing file {name}: {str(e)}")
+            return None, indexed_doc
 
-    def _read_file(self) -> str:
+    def _read_file(self, path: str, name: str) -> str:
         """Read file content."""
-        file_path = os.path.join(self.current_path, self.current_name)
+        file_path = os.path.join(path, name)
         try:
             with open(file_path, "r", encoding="utf-8") as file:
                 return file.read()
         except Exception as e:
-            raise IOError(f"Error reading file {self.current_name}: {str(e)}")
+            raise IOError(f"Error reading file {name}: {str(e)}")
 
-    def walk_through_project(self, path: str) -> None:
+    def walk_through_project(
+        self,
+        path: str,
+        ignored_directories: List[str],
+        included_file_extensions: List[str],
+    ) -> str:
         """Walk through project directories and process files."""
         file_count = 0
+        indexed_doc = ""
         for root, dirs, files in os.walk(path):
             dirs[:] = [
-                d for d in dirs if not self.should_ignore_dir(os.path.join(root, d))
+                d
+                for d in dirs
+                if not self.should_ignore_dir(
+                    os.path.join(root, d), ignored_directories
+                )
             ]
             included_files = [
                 f
                 for f in files
                 if any(
-                    f.lower().endswith(ext.lower())
-                    for ext in self.included_file_extensions
+                    f.lower().endswith(ext.lower()) for ext in included_file_extensions
                 )
             ]
 
             for file in included_files:
-                self.current_path = root
-                self.current_name = file
-                self.process_file()
+                _, indexed_doc = self.process_file(root, file, indexed_doc)
                 file_count += 1
                 if file_count % 3 == 0 or file_count % 4 == 0:
-                    self.indexed_doc += f"\n{self.DOCUMENT_SEPARATOR}\n"
+                    indexed_doc += f"\n{self.DOCUMENT_SEPARATOR}\n"
+        return indexed_doc
 
-    def chunk_and_embed_documents(self) -> List[Dict]:
+    def process_single_file(self, file_path: str) -> Optional[Dict]:
+        """Process a single file by its path and return its analysis.
+
+        Args:
+            file_path (str): Full path to the file to process
+
+        Returns:
+            Optional[Dict]: Dictionary containing the analysis and embeddings if successful,
+                          None if processing fails
+        """
+        try:
+            # Extract path and filename
+            path = os.path.dirname(file_path)
+            name = os.path.basename(file_path)
+
+            # Process the file
+            file_analysis, indexed_doc = self.process_file(path, name, "")
+
+            if file_analysis is None:
+                return None
+
+            # Create embeddings
+            embedded_chunks = self.chunk_and_embed_documents(indexed_doc)
+
+            if not embedded_chunks:
+                return None
+
+            return {"analysis": file_analysis, "embedded_chunks": embedded_chunks}
+
+        except Exception as e:
+            print(f"Error processing single file {file_path}: {str(e)}")
+            return None
+
+    def chunk_and_embed_documents(self, indexed_doc: str) -> List[Dict]:
         """Chunk documents and create embeddings."""
-        if not self.indexed_doc:
+        if not indexed_doc:
             return []
 
-        documents = self.indexed_doc.split(self.DOCUMENT_SEPARATOR)
+        documents = indexed_doc.split(self.DOCUMENT_SEPARATOR)
         chunks = [doc.strip() for doc in documents if doc.strip()]
 
         embeddings_input = []
@@ -146,22 +190,48 @@ class IndexService:
 
         return self.embedding_service.embed_chunks(embeddings_input)
 
-    def save_to_vector_db(self, embedded_chunks: List[Dict]) -> None:
-        """Save embedded chunks to vector database."""
+    def save_to_vector_db(
+        self, embedded_chunks: List[Dict], vector_db: VectorDB
+    ) -> None:
+        """Save embedded chunks to vector database.
+
+        Takes the embedded chunks (text, embeddings vectors, and file paths) and stores them
+        in the vector database for later similarity search and retrieval. The chunks are
+        stored with their associated metadata to maintain traceability back to source files.
+        """
+
         texts = [chunk["text"] for chunk in embedded_chunks]
         vectors = [chunk["embedding"] for chunk in embedded_chunks]
         paths = [chunk["metadata"]["path"] for chunk in embedded_chunks]
-        self.vector_db.insert(texts=texts, file_paths=paths, vectors=vectors)
+        vector_db.insert(texts=texts, file_paths=paths, vectors=vectors)
 
-    def save_collection_metadata(self) -> Dict:
+    def save_collection_metadata(self, collection_name: str, base_path: str) -> Dict:
         """Save collection metadata to database."""
-        existing_collection = self.db_service.get_collection_by_path(self.base_path)
+        existing_collection = self.db_service.get_collection_by_path(base_path)
         if existing_collection:
             return existing_collection
 
         return self.db_service.create_project_collection(
-            name=self.collection_name, path=self.base_path
+            name=collection_name, path=base_path
         )
+
+    def get_collection_metadata(self, path: str) -> Dict:
+        """Get collection metadata for a given project path.
+
+        Args:
+            path (str): The project path to get metadata for
+
+        Returns:
+            Dict: Collection metadata if found, empty dict if not found
+        """
+        collection = self.db_service.get_collection_by_path(path)
+        if collection:
+            return {
+                "name": collection.name,
+                "path": collection.path,
+                "created_at": collection.created_at,
+            }
+        return {}
 
     def check_collection_exists(self, path: str) -> Dict:
         """
@@ -178,7 +248,8 @@ class IndexService:
             return {"exists": True, "name": existing_collection.name, "path": path}
         return {"exists": False}
 
-    def start_indexing(self, path: str) -> Dict:
+    # TODO: Move this function to the controller
+    def main_indexing(self, path: str) -> Dict:
         """Main indexing process."""
         try:
             # First check if collection exists
@@ -193,27 +264,26 @@ class IndexService:
 
             configs = self.get_projects_config(path)
 
-            self.ignored_directories = configs.get("ignored-directories", [])
-            self.included_file_extensions = configs.get("included-file-extensions", [])
+            ignored_directories = configs.get("ignored-directories", [])
+            included_file_extensions = configs.get("included-file-extensions", [])
             starting_directory = configs.get("starting-directory", "")
 
-            self.base_path = path
             full_path = os.path.join(path, starting_directory)
 
-            self.collection_name = self._generate_collection_name(full_path)
-            self.vector_db = VectorDB(
-                collection_name=self.collection_name, dim=self.DIMENSIONS
-            )
+            collection_name = self._generate_collection_name(full_path)
+            vector_db = VectorDB(collection_name=collection_name, dim=self.DIMENSIONS)
 
-            self.walk_through_project(full_path)
-            embedded_chunks = self.chunk_and_embed_documents()
-            self.save_to_vector_db(embedded_chunks)
-            collection_info = self.save_collection_metadata()
+            indexed_doc = self.walk_through_project(
+                full_path, ignored_directories, included_file_extensions
+            )
+            embedded_chunks = self.chunk_and_embed_documents(indexed_doc)
+            self.save_to_vector_db(embedded_chunks, vector_db)
+            collection_info = self.save_collection_metadata(collection_name, path)
 
             return {
                 "success": True,
                 "skip_indexing": False,
-                "collection_name": self.collection_name,
+                "collection_name": collection_name,
                 "collection_info": collection_info,
                 "chunks_processed": len(embedded_chunks),
             }

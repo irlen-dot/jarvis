@@ -5,6 +5,8 @@ import asyncio
 from pathlib import Path
 from typing import Optional
 
+from jarvis.helper.cmd_prompt import run_command
+
 # Ensure project root is in Python path
 def setup_python_path() -> None:
     """Add project root to Python path if needed."""
@@ -20,31 +22,32 @@ class CodeGenCLI:
     def __init__(self):
         """Initialize CLI with working directory and controller."""
         self.original_working_dir = Path.cwd()
-        self.controller = CodeGenController()
+        self.codeGenController = CodeGenController()
         
     def create_parser(self) -> argparse.ArgumentParser:
-        """Create and configure argument parser.
-        
-        Returns:
-            Configured argument parser
-        """
         parser = argparse.ArgumentParser(
             description='Code generation and directory information utility'
         )
-        
+
         parser.add_argument(
             '-a', '--all',
             action='store_true',
             help='Show both current working directory and script location'
         )
-        
+
         parser.add_argument(
             '--writecode',
             type=str,
             metavar='STRING',
             help='LLM prompt for code generation'
         )
-        
+
+        parser.add_argument(
+            '-o', '--open',
+            action='store_true',
+            help='Open the jarvis project code itself'
+        )
+
         return parser
     
     def show_directory_info(self) -> None:
@@ -61,12 +64,17 @@ class CodeGenCLI:
         Returns:
             Exit code (0 for success)
         """
+        
         if args.all:
             self.show_directory_info()
         
+        if args.open:
+            run_command("git ls-files --others --exclude-standard")
+            
+        
         if args.writecode:
             print(f"Working directory: {self.original_working_dir}")
-            await self.controller.manage_input(
+            await self.codeGenController.manage_input(
                 args.writecode,
                 str(self.original_working_dir)
             )

@@ -99,11 +99,16 @@ class CodeGenController(BaseController):
 
     def get_file_indexes(self, input: str, path: str):
         collection = self.db.get_collection_by_path(path=path)
-        print(f"The collection name: {collection.name}")
+
         vector_store = VectorDB(collection_name=collection.name)
         embeddings = self.embedding.embed_query(input)
-        # TODO Clean this part of the code
-        return vector_store.search(embeddings)[0].get("text")
+
+        # TODO add a more sophisticated system of
+        # managing which docs are more relevant
+        first_doc = vector_store.search(embeddings)[0]
+        content = first_doc.get("text")
+
+        return content
 
     async def manage_input(self, input: str, path: Path) -> Dict[str, Any]:
         """Process user input and execute appropriate tools"""

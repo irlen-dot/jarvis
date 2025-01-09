@@ -4,10 +4,14 @@ import os
 import sys
 import asyncio
 from pathlib import Path
+from jarvis.helper.cmd_prompt import change_dir, run_command
 from jarvis.index_project.controller import IndexController
 from jarvis.main_controller import MainController
 from jarvis.project_template.controller import ProjectTempController
 from jarvis.codegen.controller import CodeGenController
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def setup_python_path() -> None:
@@ -32,6 +36,7 @@ class CodeGenCLI:
         self.project_controller = ProjectTempController()
         self.project_types = ["unity", "python", "nodejs"]
         self.index_controller = IndexController()
+        self.jarvis_path = os.environ.get("JARVIS_PATH")
 
     def show_directory_info(self) -> None:
         click.echo(f"Current working directory: {self.original_working_dir}")
@@ -65,7 +70,9 @@ class CodeGenCLI:
         clear_cache: str,
         writecode: str,
         prompt: str,
+        open_jarvis: str,
     ) -> int:
+
         if show_all:
             self.show_directory_info()
 
@@ -90,6 +97,10 @@ class CodeGenCLI:
         if clear_cache:
             self.index_controller.clear_collection(path=str(self.original_working_dir))
 
+        if open_jarvis:
+            with change_dir(self.jarvis_path):
+                run_command("code .")
+
         return 0
 
 
@@ -109,14 +120,17 @@ class CodeGenCLI:
 @click.option("--clear-cache", help="Clear all indexed files.")
 @click.option("--writecode", help="LLM prompt for code generation")
 @click.option("-p", "--prompt", help="Basic LLM prompt")
-def main(all, index, init_project, clear_cache, writecode, prompt):
+@click.option(
+    "-o", "--open-jarvis", help="Open the jarvis code. MADE FOR DEBUG PURPOSES"
+)
+def main(all, index, init_project, clear_cache, writecode, prompt, open_jarvis):
     """Code generation and directory information utility"""
     try:
         setup_python_path()
         cli = CodeGenCLI()
         return asyncio.run(
             cli.process_command(
-                all, index, init_project, clear_cache, writecode, prompt
+                all, index, init_project, clear_cache, writecode, prompt, open_jarvis
             )
         )
     except KeyboardInterrupt:

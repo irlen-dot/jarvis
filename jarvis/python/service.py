@@ -121,8 +121,7 @@ class PythonProjectManager:
                 )
 
             # Launch VS Code
-            # TODO Decomment
-            # run_command(f"code {str(project_path)}")
+            run_command(f"code {str(project_path)}")
 
             return project_path
 

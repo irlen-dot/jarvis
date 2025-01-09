@@ -38,3 +38,5 @@ class IndexController:
         except Exception as e:
             click.echo(f"Error during indexing: {str(e)}")
             raise
+
+    # def index_added_files(self, ):

@@ -57,7 +57,12 @@ class CodeGenCLI:
                 return self.project_types[selected]
 
     async def process_command(
-        self, show_all: bool, index: str, init_project: str, writecode: str, prompt: str
+        self,
+        show_all: bool,
+        index: str,
+        init_project: str,
+        writecode: str,
+        prompt: str0,
     ) -> int:
         if show_all:
             self.show_directory_info()
@@ -68,7 +73,9 @@ class CodeGenCLI:
 
         if init_project:
             project_type = self.select_project_type()
-            self.project_controller.init_project(str(self.original_working_dir))
+            self.project_controller.init_project(
+                str(self.original_working_dir), project_type
+            )
 
         if writecode:
             click.echo(f"Working directory: {self.original_working_dir}")
@@ -93,7 +100,9 @@ class CodeGenCLI:
     "-i", "--index", help="Index all folders and files of the project for code access"
 )
 @click.option(
-    "--init-project", help="Init a project in Jarvis DB to maintain chat history"
+    "--init-project",
+    help="Init a project in Jarvis DB to maintain chat history",
+    is_flag=True,
 )
 @click.option("--writecode", help="LLM prompt for code generation")
 @click.option("-p", "--prompt", help="Basic LLM prompt")

@@ -8,6 +8,7 @@ def main():
         user_input = input("What should I do: ")
         if user_input.lower() == "exit":
             break
+
         controller.manage_input(user_input)
 
 

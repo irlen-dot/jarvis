@@ -62,7 +62,7 @@ class CodeGenCLI:
         index: str,
         init_project: str,
         writecode: str,
-        prompt: str0,
+        prompt: str,
     ) -> int:
         if show_all:
             self.show_directory_info()

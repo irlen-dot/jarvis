@@ -4,15 +4,18 @@ import os
 import time
 from langchain.tools import tool
 from dotenv import load_dotenv
-
-load_dotenv()
+from jarvis.helper.menu import Menu
 
 
 class UnityProjectCreator:
     def __init__(self):
-        self.unity_exe = os.getenv("UNITY_PATH")
+        load_dotenv(override=True)
+        self.menu = Menu()
+        self.unity_path_start = os.getenv("UNITY_PATH_START")
+        self.unity_path_end = os.getenv("UNITY_PATH_END")
+        print(self.unity_path_start)
         self.projects_path = os.getenv("UNITY_PROJECT_PATH")
-        if not self.unity_exe or not self.projects_path:
+        if not self.unity_path_start or not self.projects_path:
             raise ValueError(
                 "Unity path or projects path not found in environment variables"
             )
@@ -59,13 +62,24 @@ class UnityProjectCreator:
         Returns:
             str: Full path to the created project
         """
-        final_path = os.path.join(project_path or self.projects_path, project_name)
+        # The final path is wrong becasue I have edited the .env file
+        # final_path = os.path.join(project_path or self.projects_path, project_name)
 
-        command = [self.unity_exe, "-createProject", final_path, "-quit"]
+        unity_version = self.menu.show_menu(os.listdir(self.unity_path_start))
 
-        print(command)
+        print(f"Unity path start: {self.unity_path_start}")
+        print(f"Unity path end: {self.unity_path_end}")
 
-        pdb.set_trace()
+        unity_path = os.path.join(
+            self.unity_path_start, unity_version, self.unity_path_end
+        )
+
+        print(f"Full Unity path: {unity_path}")
+
+        final_path = os.path.join(self.projects_path, project_name)
+
+        command = [unity_path, "-createProject", final_path, "-quit"]
+
         try:
             process = subprocess.Popen(
                 command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
